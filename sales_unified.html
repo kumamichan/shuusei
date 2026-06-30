@@ -368,12 +368,6 @@ input[type="date"].ti{color-scheme:dark;}
     <div class="staff-tab-wrap" id="staff-tabs-prog"></div>
     <div id="staff-prog-dashes"><p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">フォームを送信するとスタッフごとの進捗が表示されます</p></div>
   </div>
-
-  <!-- 当日入力グラフ -->
-  <div class="card">
-    <div class="card-head"><div class="card-icon gold">📊</div><div><div class="card-title">当月 売上推移（棒グラフ）</div><div class="card-sub">累計実績 vs 目標</div></div></div>
-    <div class="chart-bar-wrap" id="chart-sales-bars"><p style="color:var(--muted);font-size:12px;">データ送信後に表示されます</p></div>
-  </div>
 </div>
 
 <!-- ══════════ TAB3: 目標設定 ══════════ -->
@@ -490,7 +484,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbyp2XkHFX-HSiOfnFWWZKCIcD6k6vq9IRH6arkZh_wVBHcB-AOhXh4WCzzjbjt3JKpBFw/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxPuMbAhgDXfzsizhrtTBY7LoBwA_AaDF7MQzXbn-r9hwlogHs4aVgf1xjaUf63HgYy/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -1075,18 +1069,21 @@ function updateBoostSuggest(){
 // ════════════════════════════════════════
 // PROGRESS DASHBOARD
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// 進捗ダッシュボード（スプシから取得・全デバイス共通）
+// ════════════════════════════════════════
+var progressCache = {};
+var progressActiveStaff = null;
+
 function renderProgress(){
-  var dateVal   = document.getElementById('f-date').value || today();
-  var month     = new Date(dateVal).getMonth()+1;
-  var mkMonth   = new Date(dateVal).getFullYear();
-  var mk        = mkMonth+'-'+(month<10?'0':'')+month;
   var staffList = getStaffList();
   var tabsWrap  = document.getElementById('staff-tabs-prog');
   var dashWrap  = document.getElementById('staff-prog-dashes');
-  document.getElementById('dash-month-lbl').textContent = month+'月の個人目標との差異';
+  var now = new Date();
+  document.getElementById('dash-month-lbl').textContent = (now.getMonth()+1)+'月の個人目標との差異';
 
   if(!staffList.length){
-    dashWrap.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">フォームを送信するとスタッフごとの進捗が表示されます</p>';
+    dashWrap.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">スタッフを登録すると進捗が表示されます</p>';
     return;
   }
   tabsWrap.innerHTML=''; dashWrap.innerHTML='';
@@ -1096,126 +1093,157 @@ function renderProgress(){
     var tab  = document.createElement('div');
     tab.className='staff-tab'+(si===0?' active':'');
     tab.textContent='👤 '+name;
-    (function(idx){
+    (function(idx,nm){
       tab.onclick=function(){
-        var allTabs  = document.querySelectorAll('#staff-tabs-prog .staff-tab');
-        var allDashs = document.querySelectorAll('.staff-dash-prog');
-        for(var k=0;k<allTabs.length;k++)  allTabs[k].classList.remove('active');
-        for(var k=0;k<allDashs.length;k++) allDashs[k].classList.remove('active');
+        var allTabs = document.querySelectorAll('#staff-tabs-prog .staff-tab');
+        for(var k=0;k<allTabs.length;k++) allTabs[k].classList.remove('active');
         this.classList.add('active');
-        document.getElementById('sdash-'+idx).classList.add('active');
+        progressActiveStaff = nm;
+        loadStaffProgress(nm);
       };
-    })(si);
+    })(si,name);
     tabsWrap.appendChild(tab);
-
-    var tgt      = getStaffTarget(name,month);
-    var cum      = getCumStaff(name,mk);
-    var boostCum = getCumBoost(name,mk);
-    var boostTgt = getStaffBoostTarget(name, month-1);
-    var totCnt   = cum.newCount+cum.retCount;
-    var salesPct = tgt.sales>0?cum.sales/tgt.sales:0;
-    var newPct   = tgt.newCount>0?cum.newCount/tgt.newCount:0;
-    var retPct   = tgt.retCount>0?cum.retCount/tgt.retCount:0;
-    var totPct   = tgt.totalCount>0?totCnt/tgt.totalCount:0;
-
-    function bc(p){ return p>=1?'green':p>=0.8?'gold':'red'; }
-    function dc2(p){ return p>=1?'pos':p>=0.8?'warn':'neg'; }
-    function ps(p){ return (p*100).toFixed(1)+'%'; }
-    function ds(a,t,yen){
-      var diff=a-t, abs=yen?fmtYen(Math.abs(diff)):Math.abs(diff).toLocaleString();
-      return diff>=0?'▲'+abs+' 超過':'▼'+abs+' 不足';
-    }
-
-    var div = document.createElement('div');
-    div.className='staff-dash staff-dash-prog'+(si===0?' active':'');
-    div.id='sdash-'+si;
-    div.innerHTML=
-      '<div class="kpi-grid">'+
-        '<div class="kpi-box"><div class="kpi-label">売上合計</div>'+
-        '<div class="kpi-val">'+fmtYen(cum.sales)+'</div>'+
-        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(salesPct)+'" style="width:'+Math.min(salesPct,1)*100+'%"></div></div>'+
-        '<div class="kpi-diff '+dc2(salesPct)+'">'+ps(salesPct)+' / 目標'+fmtYen(tgt.sales)+' / '+ds(cum.sales,tgt.sales,true)+'</div></div>'+
-        '<div class="kpi-box"><div class="kpi-label">新規客数</div>'+
-        '<div class="kpi-val">'+cum.newCount+'人</div>'+
-        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(newPct)+'" style="width:'+Math.min(newPct,1)*100+'%"></div></div>'+
-        '<div class="kpi-diff '+dc2(newPct)+'">'+ps(newPct)+' / 目標'+tgt.newCount+'人 / '+ds(cum.newCount,tgt.newCount,false)+'</div></div>'+
-        '<div class="kpi-box"><div class="kpi-label">既存客数</div>'+
-        '<div class="kpi-val">'+cum.retCount+'人</div>'+
-        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(retPct)+'" style="width:'+Math.min(retPct,1)*100+'%"></div></div>'+
-        '<div class="kpi-diff '+dc2(retPct)+'">'+ps(retPct)+' / 目標'+tgt.retCount+'人 / '+ds(cum.retCount,tgt.retCount,false)+'</div></div>'+
-        '<div class="kpi-box"><div class="kpi-label">総客数</div>'+
-        '<div class="kpi-val">'+totCnt+'人</div>'+
-        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(totPct)+'" style="width:'+Math.min(totPct,1)*100+'%"></div></div>'+
-        '<div class="kpi-diff '+dc2(totPct)+'">'+ps(totPct)+' / 目標'+tgt.totalCount+'人 / '+ds(totCnt,tgt.totalCount,false)+'</div></div>'+
-      '</div>'+
-      '<div style="margin-top:10px;padding:12px;background:rgba(200,164,90,0.05);border-radius:10px;border:1px solid rgba(200,164,90,0.12);">'+
-        '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">個人目標（'+month+'月）</div>'+
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;font-size:12px;">'+
-          '<div><div style="color:var(--muted);font-size:10px;">売上</div><div style="color:var(--gold2);font-weight:700;">'+fmtYen(tgt.sales)+'</div></div>'+
-          '<div><div style="color:var(--muted);font-size:10px;">新規</div><div style="color:var(--green);font-weight:700;">'+tgt.newCount+'人</div></div>'+
-          '<div><div style="color:var(--muted);font-size:10px;">既存</div><div style="color:var(--blue);font-weight:700;">'+tgt.retCount+'人</div></div>'+
-          '<div><div style="color:var(--muted);font-size:10px;">総客数</div><div style="color:var(--gold2);font-weight:700;">'+tgt.totalCount+'人</div></div>'+
-        '</div>'+
-      '</div>'+
-      buildBoostProgressHtml(boostCum, boostTgt);
-    dashWrap.appendChild(div);
   }
-  renderSalesBars();
+
+  dashWrap.innerHTML = '<div id="progress-single-view"><p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">読み込み中...</p></div>';
+  progressActiveStaff = staffList[0];
+  loadStaffProgress(staffList[0]);
 }
 
-function buildBoostProgressHtml(boostCum, boostTgt){
-  var labels = {b1:'強化商材①', b2:'強化商材②', b3:'強化商材③'};
-  var html = '<div style="margin-top:10px;padding:12px;background:rgba(160,90,172,0.05);border-radius:10px;border:1px solid rgba(160,90,172,0.15);">'+
-    '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">🌟 強化商材 進捗</div>';
+function loadStaffProgress(staffName){
+  var viewEl = document.getElementById('progress-single-view');
+  if(!viewEl) return;
+  if(!GAS_URL || GAS_URL.indexOf('YOUR_GAS')!==-1){
+    viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">⚠️ GAS URLが未設定です</p>';
+    return;
+  }
 
-  ['b1','b2','b3'].forEach(function(bk){
-    var actCount = boostCum[bk] || 0;
-    var t = boostTgt[bk] || {price:0, count:0};
-    var tgtCount = t.count || 0;
-    var tgtAmount = (t.price||0) * tgtCount;
-    var actAmount = (t.price||0) * actCount;
-    var pct = tgtCount>0 ? Math.min(actCount/tgtCount,1) : 0;
-    var pctLabel = tgtCount>0 ? (actCount/tgtCount*100).toFixed(1)+'%' : '--';
-    var barC = pct>=1?'green':pct>=0.8?'gold':'red';
+  viewEl.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">読み込み中...</p>';
 
-    html += '<div style="margin-bottom:8px;padding:8px 10px;background:var(--card2);border-radius:8px;">'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">'+
-        '<span style="font-weight:700;">'+labels[bk]+'</span>'+
-        '<span style="color:'+(pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)')+';font-weight:700;">'+pctLabel+'</span>'+
-      '</div>'+
-      '<div class="kpi-bar-wrap"><div class="kpi-bar '+barC+'" style="width:'+(pct*100)+'%"></div></div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;">'+
-        '<span>個数: '+actCount+' / '+(tgtCount>0?tgtCount+'個':'未設定')+'</span>'+
-        '<span>金額: '+fmtYen(actAmount)+' / '+(tgtAmount>0?fmtYen(tgtAmount):'--')+'</span>'+
-      '</div>'+
-    '</div>';
-  });
+  var oldScript = document.getElementById('prog-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._progTimeout = setTimeout(function(){
+    viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">タイムアウトしました</p>';
+  }, 12000);
+
+  window.progCallback = function(json){
+    clearTimeout(window._progTimeout);
+    if(!json || json.status!=='ok'){
+      viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">取得エラー: '+(json?json.message:'不明')+'</p>';
+      return;
+    }
+    if(progressActiveStaff === json.staff){
+      renderProgressView(json);
+    }
+  };
+
+  var script = document.createElement('script');
+  script.id = 'prog-jsonp';
+  script.src = GAS_URL + '?action=progress&staff=' + encodeURIComponent(staffName) + '&callback=progCallback&t=' + Date.now();
+  script.onerror = function(){
+    clearTimeout(window._progTimeout);
+    viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">取得に失敗しました</p>';
+  };
+  document.body.appendChild(script);
+}
+
+function renderProgressView(d){
+  var viewEl = document.getElementById('progress-single-view');
+  if(!viewEl) return;
+
+  function bc(p){ return p>=1?'green':p>=0.8?'gold':'red'; }
+  function dc2(p){ return p>=1?'pos':p>=0.8?'warn':'neg'; }
+  function ps(p){ return (p*100).toFixed(1)+'%'; }
+  function ds(a,t,yen){
+    var diff=a-t, abs=yen?fmtYen(Math.abs(diff)):Math.abs(diff).toLocaleString();
+    return diff>=0?'▲'+abs+' 超過':'▼'+abs+' 不足';
+  }
+
+  var salesPct = d.target>0 ? d.sales/d.target : 0;
+  var newPct   = d.tgtNewCount>0 ? d.newCount/d.tgtNewCount : 0;
+  var retPct   = d.tgtRetCount>0 ? d.retCount/d.tgtRetCount : 0;
+  var totPct   = d.tgtTotalCount>0 ? d.total/d.tgtTotalCount : 0;
+
+  var html = '';
+
+  // KPIカード：目標を上、実績を下に並べてわかりやすく
+  html += '<div class="kpi-grid">';
+
+  html += '<div class="kpi-box">';
+  html += '<div class="kpi-label">売上目標</div>';
+  html += '<div style="font-family:Syne,sans-serif;font-size:14px;color:var(--blue);font-weight:700;margin-bottom:6px;">'+(d.target>0?fmtYen(d.target):'未設定')+'</div>';
+  html += '<div class="kpi-label">売上実績</div>';
+  html += '<div class="kpi-val">'+fmtYen(d.sales)+'</div>';
+  html += '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(salesPct)+'" style="width:'+Math.min(salesPct,1)*100+'%"></div></div>';
+  html += '<div class="kpi-diff '+dc2(salesPct)+'">'+(d.target>0?ps(salesPct)+' / '+ds(d.sales,d.target,true):'--')+'</div>';
+  html += '</div>';
+
+  html += '<div class="kpi-box">';
+  html += '<div class="kpi-label">新規客数目標</div>';
+  html += '<div style="font-family:Syne,sans-serif;font-size:14px;color:var(--blue);font-weight:700;margin-bottom:6px;">'+(d.tgtNewCount>0?d.tgtNewCount+'人':'未設定')+'</div>';
+  html += '<div class="kpi-label">新規客数実績</div>';
+  html += '<div class="kpi-val">'+d.newCount+'人</div>';
+  html += '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(newPct)+'" style="width:'+Math.min(newPct,1)*100+'%"></div></div>';
+  html += '<div class="kpi-diff '+dc2(newPct)+'">'+(d.tgtNewCount>0?ps(newPct)+' / '+ds(d.newCount,d.tgtNewCount,false):'--')+'</div>';
+  html += '</div>';
+
+  html += '<div class="kpi-box">';
+  html += '<div class="kpi-label">既存客数目標</div>';
+  html += '<div style="font-family:Syne,sans-serif;font-size:14px;color:var(--blue);font-weight:700;margin-bottom:6px;">'+(d.tgtRetCount>0?d.tgtRetCount+'人':'未設定')+'</div>';
+  html += '<div class="kpi-label">既存客数実績</div>';
+  html += '<div class="kpi-val">'+d.retCount+'人</div>';
+  html += '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(retPct)+'" style="width:'+Math.min(retPct,1)*100+'%"></div></div>';
+  html += '<div class="kpi-diff '+dc2(retPct)+'">'+(d.tgtRetCount>0?ps(retPct)+' / '+ds(d.retCount,d.tgtRetCount,false):'--')+'</div>';
+  html += '</div>';
+
+  html += '<div class="kpi-box">';
+  html += '<div class="kpi-label">総客数目標</div>';
+  html += '<div style="font-family:Syne,sans-serif;font-size:14px;color:var(--blue);font-weight:700;margin-bottom:6px;">'+(d.tgtTotalCount>0?d.tgtTotalCount+'人':'未設定')+'</div>';
+  html += '<div class="kpi-label">総客数実績</div>';
+  html += '<div class="kpi-val">'+d.total+'人</div>';
+  html += '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(totPct)+'" style="width:'+Math.min(totPct,1)*100+'%"></div></div>';
+  html += '<div class="kpi-diff '+dc2(totPct)+'">'+(d.tgtTotalCount>0?ps(totPct)+' / '+ds(d.total,d.tgtTotalCount,false):'--')+'</div>';
+  html += '</div>';
 
   html += '</div>';
-  return html;
-}
 
-// ════════════════════════════════════════
-// SALES BAR CHART
-// ════════════════════════════════════════
-function renderSalesBars(){
-  var el = document.getElementById('chart-sales-bars');
-  if(!el) return;
-  var mk    = getMonthKey();
-  var cum   = getCumAll(mk);
-  var month = new Date(document.getElementById('f-date').value||today()).getMonth()+1;
-  var allTgt= getAllTarget(month);
-  if(!cum.sales && !allTgt.sales){ el.innerHTML='<p style="color:var(--muted);font-size:12px;">データ送信後に表示されます</p>'; return; }
-  var pct   = allTgt.sales>0?Math.min(cum.sales/allTgt.sales,1.2):0;
-  var color = pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)';
-  el.innerHTML=
-    '<div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">'+
-      '<span>累計 '+fmtYen(cum.sales)+'</span><span>目標 '+fmtYen(allTgt.sales)+'</span>'+
-    '</div>'+
-    '<div style="height:20px;background:var(--border);border-radius:10px;overflow:hidden;">'+
-      '<div style="height:100%;width:'+(pct*100)+'%;background:'+color+';border-radius:10px;transition:width 0.6s;"></div>'+
-    '</div>'+
-    '<div style="text-align:right;font-size:13px;font-weight:700;color:'+color+';margin-top:6px;">'+(allTgt.sales>0?(pct*100).toFixed(1)+'%':'--')+'</div>';
+  // シンプルな1本の進捗バー（売上達成率）
+  var barColor = salesPct>=1?'var(--green)':salesPct>=0.8?'var(--gold)':'var(--red)';
+  html += '<div style="margin-top:10px;padding:14px 16px;background:rgba(200,164,90,0.05);border-radius:10px;border:1px solid rgba(200,164,90,0.12);">';
+  html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;"><span>当月 売上達成率</span><span style="color:'+barColor+';font-weight:700;">'+(d.target>0?ps(salesPct):'--')+'</span></div>';
+  html += '<div style="height:14px;background:var(--border);border-radius:7px;overflow:hidden;"><div style="height:100%;width:'+(d.target>0?Math.min(salesPct,1)*100:0)+'%;background:'+barColor+';border-radius:7px;transition:width 0.6s;"></div></div>';
+  html += '</div>';
+
+  // 強化商材進捗（登録した商品名を表示）
+  if(d.boost){
+    html += '<div style="margin-top:10px;padding:12px;background:rgba(160,90,172,0.05);border-radius:10px;border:1px solid rgba(160,90,172,0.15);">';
+    html += '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">🌟 強化商材 進捗'+(d.store?'（'+d.store+'）':'')+'</div>';
+
+    for(var bi=0;bi<3;bi++){
+      var b = d.boost[bi];
+      var label = b.name ? b.name : '商材'+(bi+1)+'（未設定）';
+      var pct = b.count>0 ? Math.min(b.actualCount/b.count,1) : 0;
+      var pctLabel = b.count>0 ? (b.actualCount/b.count*100).toFixed(1)+'%' : '--';
+      var bColor = pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)';
+      var bClass = pct>=1?'green':pct>=0.8?'gold':'red';
+      var actAmount = (b.price||0) * b.actualCount;
+
+      html += '<div style="margin-bottom:8px;padding:8px 10px;background:var(--card2);border-radius:8px;">';
+      html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">';
+      html += '<span style="font-weight:700;">'+label+'</span>';
+      html += '<span style="color:'+bColor+';font-weight:700;">'+pctLabel+'</span>';
+      html += '</div>';
+      html += '<div class="kpi-bar-wrap"><div class="kpi-bar '+bClass+'" style="width:'+(pct*100)+'%"></div></div>';
+      html += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;">';
+      html += '<span>個数: '+b.actualCount+' / '+(b.count>0?b.count+'個':'未設定')+'</span>';
+      html += '<span>金額: '+fmtYen(actAmount)+' / '+(b.amount>0?fmtYen(b.amount):'--')+'</span>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  viewEl.innerHTML = html;
 }
 
 // ════════════════════════════════════════
