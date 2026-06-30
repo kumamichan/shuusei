@@ -484,7 +484,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbxPuMbAhgDXfzsizhrtTBY7LoBwA_AaDF7MQzXbn-r9hwlogHs4aVgf1xjaUf63HgYy/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsv4bGlvuzJN6T_19e789vRco-jTijMzlciVjSzoKDGzKzmkj4VKWyZ6UPU8MgDOOBUA/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -594,12 +594,12 @@ function showStaffStore(){
   } else {
     badge.style.display = 'none';
   }
-  applyStoreBoostNames(store);
+  applyStoreBoostNames(store, name);
   loadHistory();
 }
 
-// 店舗が判明したら強化商材①②③の名称を店舗マスターから自動表示（編集不可）
-function applyStoreBoostNames(store){
+// 商材①②は店舗マスターから、商材③はスタッフ個人設定から自動表示（編集不可）
+function applyStoreBoostNames(store, staffName){
   var b1 = document.getElementById('boost1-name');
   var b2 = document.getElementById('boost2-name');
   var b3 = document.getElementById('boost3-name');
@@ -610,13 +610,24 @@ function applyStoreBoostNames(store){
     var master = getStoreBoostMaster(store, mi);
     b1.value = master.b1.name || '';
     b2.value = master.b2.name || '';
-    b3.value = master.b3.name || '';
-    b1.readOnly = true; b2.readOnly = true; b3.readOnly = true;
-    b1.style.opacity = '0.75'; b2.style.opacity = '0.75'; b3.style.opacity = '0.75';
+    b1.readOnly = true; b2.readOnly = true;
+    b1.style.opacity = '0.75'; b2.style.opacity = '0.75';
   } else {
-    b1.readOnly = false; b2.readOnly = false; b3.readOnly = false;
-    b1.style.opacity = '1'; b2.style.opacity = '1'; b3.style.opacity = '1';
+    b1.readOnly = false; b2.readOnly = false;
+    b1.style.opacity = '1'; b2.style.opacity = '1';
   }
+
+  // 商材③：スタッフ個人が事前に設定した商材名があれば自動表示（編集は可能なまま、消すのは任意）
+  if(staffName){
+    var mi2 = new Date().getMonth();
+    var b3tgt = getStaffBoostCountTarget(staffName, mi2);
+    var b3info = b3tgt.b3 || {name:''};
+    if(b3info.name && !b3.value){
+      b3.value = b3info.name;
+    }
+  }
+  b3.readOnly = false;
+  b3.style.opacity = '1';
 }
 
 // ════════════════════════════════════════
@@ -631,7 +642,8 @@ function switchHistScope(scope){
   loadHistory();
 }
 
-function loadHistory(){
+function loadHistory(retryCount){
+  retryCount = retryCount || 0;
   var contEl = document.getElementById('hist-content');
   if(!contEl) return;
   var staffName = document.getElementById('f-staff').value.trim();
@@ -645,14 +657,18 @@ function loadHistory(){
     return;
   }
 
-  contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">読み込み中...</p>';
+  contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">読み込み中'+(retryCount>0?'（再試行 '+retryCount+'/2）':'')+'...</p>';
 
   var oldScript = document.getElementById('hist-jsonp');
   if(oldScript) oldScript.parentNode.removeChild(oldScript);
 
   window._histTimeout = setTimeout(function(){
-    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">タイムアウトしました</p>';
-  }, 12000);
+    if(retryCount < 2){
+      loadHistory(retryCount + 1);
+    } else {
+      contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">タイムアウトしました<br><button class="btn-rename" style="margin-top:8px;" onclick="loadHistory()">🔄 再試行</button></p>';
+    }
+  }, 8000);
 
   window.histCallback = function(json){
     clearTimeout(window._histTimeout);
@@ -668,7 +684,11 @@ function loadHistory(){
   script.src = GAS_URL + '?action=history&staff=' + encodeURIComponent(staffName) + '&scope=' + histScope + '&callback=histCallback&t=' + Date.now();
   script.onerror = function(){
     clearTimeout(window._histTimeout);
-    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得に失敗しました</p>';
+    if(retryCount < 2){
+      loadHistory(retryCount + 1);
+    } else {
+      contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得に失敗しました<br><button class="btn-rename" style="margin-top:8px;" onclick="loadHistory()">🔄 再試行</button></p>';
+    }
   };
   document.body.appendChild(script);
 }
@@ -1110,7 +1130,8 @@ function renderProgress(){
   loadStaffProgress(staffList[0]);
 }
 
-function loadStaffProgress(staffName){
+function loadStaffProgress(staffName, retryCount){
+  retryCount = retryCount || 0;
   var viewEl = document.getElementById('progress-single-view');
   if(!viewEl) return;
   if(!GAS_URL || GAS_URL.indexOf('YOUR_GAS')!==-1){
@@ -1118,14 +1139,18 @@ function loadStaffProgress(staffName){
     return;
   }
 
-  viewEl.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">読み込み中...</p>';
+  viewEl.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">読み込み中'+(retryCount>0?'（再試行 '+retryCount+'/2）':'')+'...</p>';
 
   var oldScript = document.getElementById('prog-jsonp');
   if(oldScript) oldScript.parentNode.removeChild(oldScript);
 
   window._progTimeout = setTimeout(function(){
-    viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">タイムアウトしました</p>';
-  }, 12000);
+    if(retryCount < 2){
+      loadStaffProgress(staffName, retryCount + 1);
+    } else {
+      viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">タイムアウトしました<br><button class="btn-rename" style="margin-top:8px;" onclick="loadStaffProgress(\''+staffName+'\')">🔄 再試行</button></p>';
+    }
+  }, 8000);
 
   window.progCallback = function(json){
     clearTimeout(window._progTimeout);
@@ -1143,7 +1168,11 @@ function loadStaffProgress(staffName){
   script.src = GAS_URL + '?action=progress&staff=' + encodeURIComponent(staffName) + '&callback=progCallback&t=' + Date.now();
   script.onerror = function(){
     clearTimeout(window._progTimeout);
-    viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">取得に失敗しました</p>';
+    if(retryCount < 2){
+      loadStaffProgress(staffName, retryCount + 1);
+    } else {
+      viewEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:20px;">取得に失敗しました<br><button class="btn-rename" style="margin-top:8px;" onclick="loadStaffProgress(\''+staffName+'\')">🔄 再試行</button></p>';
+    }
   };
   document.body.appendChild(script);
 }
@@ -1642,9 +1671,9 @@ function renderBoostMaster(){
 
   var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
   html += '<th style="min-width:70px;text-align:left;">店舗</th>';
-  html += '<th colspan="2">強化商材①</th><th colspan="2">強化商材②</th><th colspan="2">強化商材③</th>';
+  html += '<th colspan="2">強化商材①</th><th colspan="2">強化商材②</th>';
   html += '</tr><tr><th></th>';
-  for(var b=0;b<3;b++){
+  for(var b=0;b<2;b++){
     html += '<th style="font-size:9px;">商材名</th><th style="font-size:9px;">単価</th>';
   }
   html += '</tr></thead><tbody>';
@@ -1652,7 +1681,7 @@ function renderBoostMaster(){
   STORE_LIST.forEach(function(store){
     var m = getStoreBoostMaster(store, mi);
     html += '<tr><td class="item-label" style="font-weight:800;">'+store+'</td>';
-    ['b1','b2','b3'].forEach(function(bk){
+    ['b1','b2'].forEach(function(bk){
       var bd = m[bk];
       html += '<td><input type="text" class="boost-name-input" style="width:110px;" data-store="'+store+'" data-boost="'+bk+'" data-field="name" value="'+(bd.name||'')+'" placeholder="商材名"></td>';
       html += '<td><input type="number" class="tgt-input" style="width:80px;" data-store="'+store+'" data-boost="'+bk+'" data-field="price" value="'+(bd.price||'')+'" placeholder="0"></td>';
@@ -1660,6 +1689,7 @@ function renderBoostMaster(){
     html += '</tr>';
   });
   html += '</tbody></table></div>';
+  html += '<p style="font-size:10px;color:var(--muted);margin-top:10px;">※ 強化商材③は店舗共通ではなく、スタッフ個人が「強化商材 個数目標」で自由に設定します（マイナス対策用）</p>';
   wrap.innerHTML = html;
 }
 
@@ -1672,7 +1702,7 @@ function saveBoostMaster(){
     while(bm[store].length <= mi) bm[store].push({});
     if(!bm[store][mi]) bm[store][mi] = {};
 
-    ['b1','b2','b3'].forEach(function(bk){
+    ['b1','b2'].forEach(function(bk){
       var nameInp  = document.querySelector('[data-store="'+store+'"][data-boost="'+bk+'"][data-field="name"]');
       var priceInp = document.querySelector('[data-store="'+store+'"][data-boost="'+bk+'"][data-field="price"]');
       bm[store][mi][bk] = {
@@ -1700,12 +1730,11 @@ async function sendBoostMasterToGAS(month){
     var m = (bm[store] && bm[store][mi]) ? bm[store][mi] : {};
     var b1 = m.b1 || {name:'',price:0};
     var b2 = m.b2 || {name:'',price:0};
-    var b3 = m.b3 || {name:'',price:0};
     storeMasters.push({
       store: store,
       b1Name: b1.name, b1Price: b1.price,
       b2Name: b2.name, b2Price: b2.price,
-      b3Name: b3.name, b3Price: b3.price
+      b3Name: '', b3Price: 0
     });
   });
 
@@ -1730,21 +1759,26 @@ function getBoostTargets(){
 function saveBoostTargets_db(bt){
   localStorage.setItem('boost_targets_db', JSON.stringify(bt));
 }
-// データ構造: { staffName: [ {month_idx}: {b1:count, b2:count, b3:count} ] }
+// データ構造: { staffName: [ {month_idx}: {b1:count, b2:count, b3:{name,price,count}} ] }
 function getStaffBoostCountTarget(staffName, monthIdx){
   var bt = getBoostTargets();
   var raw = (bt[staffName] && bt[staffName][monthIdx]) ? bt[staffName][monthIdx] : {};
-  return { b1: raw.b1||0, b2: raw.b2||0, b3: raw.b3||0 };
+  return {
+    b1: raw.b1||0,
+    b2: raw.b2||0,
+    b3: raw.b3 || {name:'', price:0, count:0}
+  };
 }
-// 互換用：店舗マスターの単価＋個人の個数目標を合成して返す（進捗表示で使用）
+// 店舗マスターの単価＋個人の個数目標を合成して返す（商材①②）。商材③は完全に個人設定。
 function getStaffBoostTarget(staffName, monthIdx){
   var store = getStaffStore(staffName);
-  var master = (store && store!=='未設定') ? getStoreBoostMaster(store, monthIdx) : {b1:{price:0,name:''},b2:{price:0,name:''},b3:{price:0,name:''}};
+  var master = (store && store!=='未設定') ? getStoreBoostMaster(store, monthIdx) : {b1:{price:0,name:''},b2:{price:0,name:''}};
   var counts = getStaffBoostCountTarget(staffName, monthIdx);
+  var b3raw = counts.b3 || {name:'',price:0,count:0};
   return {
     b1: {price: master.b1.price||0, count: counts.b1||0, name: master.b1.name||''},
     b2: {price: master.b2.price||0, count: counts.b2||0, name: master.b2.name||''},
-    b3: {price: master.b3.price||0, count: counts.b3||0, name: master.b3.name||''}
+    b3: {price: b3raw.price||0, count: b3raw.count||0, name: b3raw.name||''}
   };
 }
 
@@ -1761,11 +1795,12 @@ function renderBoostTargets(){
 
   var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
   html += '<th style="min-width:90px;text-align:left;">スタッフ</th>';
-  html += '<th colspan="3">強化商材①</th><th colspan="3">強化商材②</th><th colspan="3">強化商材③</th>';
+  html += '<th colspan="3">強化商材①</th><th colspan="3">強化商材②</th><th colspan="4">強化商材③（個人設定）</th>';
   html += '</tr><tr><th></th>';
-  for(var b=0;b<3;b++){
+  for(var b=0;b<2;b++){
     html += '<th style="font-size:9px;color:var(--blue);">単価(自動)</th><th style="font-size:9px;">個数目標</th><th style="font-size:9px;color:var(--green);">金額目標</th>';
   }
+  html += '<th style="font-size:9px;">商材名</th><th style="font-size:9px;">単価</th><th style="font-size:9px;">個数目標</th><th style="font-size:9px;color:var(--green);">金額目標</th>';
   html += '</tr></thead><tbody>';
 
   for(var si=0; si<staffList.length; si++){
@@ -1773,16 +1808,28 @@ function renderBoostTargets(){
     var t = getStaffBoostTarget(nm, mi);
     var store = getStaffStore(nm);
     html += '<tr><td class="item-label">'+nm+' <span style="font-size:9px;color:var(--muted);">('+store+')</span></td>';
-    ['b1','b2','b3'].forEach(function(bk){
+
+    // 商材①②（自動単価、個数だけ入力）
+    ['b1','b2'].forEach(function(bk){
       var bd = t[bk];
       var amount = bd.price * bd.count;
       html += '<td style="text-align:right;color:var(--blue);font-size:11px;padding:6px 10px;">'+(bd.price>0?bd.price.toLocaleString():'未設定')+(bd.name?'<br><span style="font-size:9px;color:var(--muted);">'+bd.name+'</span>':'')+'</td>';
       html += '<td><input type="number" class="tgt-input" style="width:60px;" data-staff="'+nm+'" data-boost="'+bk+'" data-field="count" value="'+(bd.count||'')+'" placeholder="0" oninput="updateBoostAmount(this)"></td>';
       html += '<td class="total-cell" id="boost-amt-'+nm+'-'+bk+'" data-price="'+bd.price+'" style="min-width:80px;">'+(amount>0?amount.toLocaleString():'0')+'</td>';
     });
+
+    // 商材③（商品名・単価・個数すべて個人入力）
+    var b3 = t.b3;
+    var b3Amount = b3.price * b3.count;
+    html += '<td><input type="text" class="boost-name-input" style="width:100px;" data-staff="'+nm+'" data-boost="b3" data-field="name" value="'+(b3.name||'')+'" placeholder="商材名"></td>';
+    html += '<td><input type="number" class="tgt-input" style="width:70px;" data-staff="'+nm+'" data-boost="b3" data-field="price" value="'+(b3.price||'')+'" placeholder="0" oninput="updateBoostAmount(this)"></td>';
+    html += '<td><input type="number" class="tgt-input" style="width:60px;" data-staff="'+nm+'" data-boost="b3" data-field="count" value="'+(b3.count||'')+'" placeholder="0" oninput="updateBoostAmount(this)"></td>';
+    html += '<td class="total-cell" id="boost-amt-'+nm+'-b3" data-price="'+b3.price+'" style="min-width:80px;">'+(b3Amount>0?b3Amount.toLocaleString():'0')+'</td>';
+
     html += '</tr>';
   }
   html += '</tbody></table></div>';
+  html += '<p style="font-size:10px;color:var(--muted);margin-top:10px;">※ 強化商材③は各スタッフが自由に商材名・単価・個数目標を設定できます（マイナス対策用）</p>';
   wrap.innerHTML = html;
 }
 
@@ -1808,10 +1855,19 @@ function saveBoostTargets(){
     while(bt[nm].length <= mi) bt[nm].push({});
     if(!bt[nm][mi]) bt[nm][mi] = {};
 
-    ['b1','b2','b3'].forEach(function(bk){
+    ['b1','b2'].forEach(function(bk){
       var countInp = document.querySelector('[data-staff="'+nm+'"][data-boost="'+bk+'"][data-field="count"]');
       bt[nm][mi][bk] = countInp ? (parseInt(countInp.value)||0) : 0;
     });
+
+    var b3NameInp  = document.querySelector('[data-staff="'+nm+'"][data-boost="b3"][data-field="name"]');
+    var b3PriceInp = document.querySelector('[data-staff="'+nm+'"][data-boost="b3"][data-field="price"]');
+    var b3CountInp = document.querySelector('[data-staff="'+nm+'"][data-boost="b3"][data-field="count"]');
+    bt[nm][mi].b3 = {
+      name:  b3NameInp  ? b3NameInp.value.trim() : '',
+      price: b3PriceInp ? (parseInt(b3PriceInp.value)||0) : 0,
+      count: b3CountInp ? (parseInt(b3CountInp.value)||0) : 0
+    };
   }
   saveBoostTargets_db(bt);
   sendBoostTargetsToGAS(mi+1);
@@ -1834,7 +1890,7 @@ async function sendBoostTargetsToGAS(month){
       staff: nm,
       b1Price: t.b1.price, b1Count: t.b1.count, b1Amount: t.b1.price*t.b1.count,
       b2Price: t.b2.price, b2Count: t.b2.count, b2Amount: t.b2.price*t.b2.count,
-      b3Price: t.b3.price, b3Count: t.b3.count, b3Amount: t.b3.price*t.b3.count
+      b3Price: t.b3.price, b3Count: t.b3.count, b3Amount: t.b3.price*t.b3.count, b3Name: t.b3.name||''
     });
   }
 
@@ -2076,7 +2132,8 @@ function dFmtYen(n){ return '¥'+(n||0).toLocaleString(); }
 function dFmtNum(n){ return (n||0).toLocaleString(); }
 function dPctColor(p){ return p>=100?'var(--green)':p>=80?'var(--gold)':'var(--red)'; }
 
-function loadDashboardData(){
+function loadDashboardData(retryCount){
+  retryCount = retryCount || 0;
   var updEl = document.getElementById('dash2-updated');
   var contEl = document.getElementById('dash2-content');
   if(!contEl) return;
@@ -2086,15 +2143,19 @@ function loadDashboardData(){
     return;
   }
 
-  contEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>';
+  contEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中'+(retryCount>0?'（再試行 '+retryCount+'/2）':'')+'...</div>';
   if(updEl) updEl.textContent = '読み込み中...';
 
   var oldScript = document.getElementById('dash2-jsonp');
   if(oldScript) oldScript.parentNode.removeChild(oldScript);
 
   window._dash2Timeout = setTimeout(function(){
-    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ タイムアウトしました（15秒）<br><small>ネットワーク環境やセキュリティ設定が原因の可能性があります</small></div>';
-  }, 15000);
+    if(retryCount < 2){
+      loadDashboardData(retryCount + 1);
+    } else {
+      contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ タイムアウトしました<br><button class="btn-rename" style="margin-top:8px;" onclick="loadDashboardData()">🔄 再試行</button></div>';
+    }
+  }, 8000);
 
   window.dash2Callback = function(json){
     clearTimeout(window._dash2Timeout);
@@ -2111,7 +2172,11 @@ function loadDashboardData(){
   script.src = GAS_URL + '?action=mtg&callback=dash2Callback&t=' + Date.now();
   script.onerror = function(e){
     clearTimeout(window._dash2Timeout);
-    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ スクリプト読み込みエラー（onerror発火）</div>';
+    if(retryCount < 2){
+      loadDashboardData(retryCount + 1);
+    } else {
+      contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ 取得に失敗しました<br><button class="btn-rename" style="margin-top:8px;" onclick="loadDashboardData()">🔄 再試行</button></div>';
+    }
   };
   document.body.appendChild(script);
 }
