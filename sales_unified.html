@@ -222,6 +222,7 @@ input[type="date"].ti{color-scheme:dark;}
     <div class="main-tab" onclick="switchMainTab('tab-progress',this)">📊 進捗ダッシュボード</div>
     <div class="main-tab" onclick="switchMainTab('tab-target',this)">🎯 目標設定</div>
     <div class="main-tab" onclick="switchMainTab('tab-yearly',this)">📈 年間推移</div>
+    <div class="main-tab" onclick="switchMainTab('tab-dashboard',this)">🏢 全体ダッシュボード</div>
   </div>
 </div>
 
@@ -244,8 +245,9 @@ input[type="date"].ti{color-scheme:dark;}
       </div>
       <div class="fg" id="fg-staff">
         <label class="fl">担当スタッフ<span class="req">*</span></label>
-        <input type="text" class="ti" id="f-staff" placeholder="例：田中" list="staff-list">
+        <input type="text" class="ti" id="f-staff" placeholder="例：田中" list="staff-list" oninput="showStaffStore()">
         <datalist id="staff-list"></datalist>
+        <div id="f-staff-store-badge" style="margin-top:6px;font-size:11px;color:var(--gold);display:none;"></div>
         <div class="err-msg">担当スタッフを入力してください</div>
       </div>
     </div>
@@ -335,6 +337,23 @@ input[type="date"].ti{color-scheme:dark;}
 
   <button class="submit-btn" onclick="submitForm()" id="submit-btn">送信する →</button>
   <div class="toast" id="toast"></div>
+
+  <!-- 入力履歴 -->
+  <div class="card" style="margin-top:16px;">
+    <div class="card-head" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="card-icon blue">📋</div>
+        <div><div class="card-title">入力履歴</div><div class="card-sub">自分の送信内容を確認（重複入力チェック用）</div></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="staff-tab active" id="hist-tab-today" onclick="switchHistScope('today')">本日のみ</button>
+        <button class="staff-tab" id="hist-tab-month" onclick="switchHistScope('month')">今月全部</button>
+      </div>
+    </div>
+    <div id="hist-content">
+      <p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">担当スタッフを入力すると履歴が表示されます</p>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ TAB2: 進捗ダッシュボード ══════════ -->
@@ -366,12 +385,17 @@ input[type="date"].ti{color-scheme:dark;}
     <!-- スタッフ管理 -->
     <div style="margin-bottom:16px;">
       <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">スタッフを追加</div>
-      <div style="display:flex;gap:10px;align-items:center;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <input type="text" class="ti" id="new-staff-name" placeholder="スタッフ名を入力" style="max-width:200px;">
+        <select class="ti" id="new-staff-store" style="max-width:140px;background:var(--card2);">
+          <option value="oro">oro</option>
+          <option value="mem">mem</option>
+          <option value="plata">plata</option>
+        </select>
         <button class="save-btn" onclick="addStaffToTarget()">＋ 追加</button>
       </div>
     </div>
-    <!-- スタッフ一覧（修正・削除）-->
+    <!-- スタッフ一覧（修正・削除・店舗変更）-->
     <div id="staff-manage-list" style="margin-bottom:16px;"></div>
 
     <!-- 月選択 -->
@@ -395,6 +419,32 @@ input[type="date"].ti{color-scheme:dark;}
       <button class="save-btn" onclick="saveTargets()">💾 目標・着地見込みを保存＆送信</button>
     </div>
     <div id="tgt-saved-msg" style="display:none;margin-top:10px;font-size:12px;color:var(--green);text-align:right;">✅ 目標・着地見込みを保存してスプシに送信しました</div>
+  </div>
+
+  <!-- 強化商材 店舗マスター設定 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon purple">🏢</div>
+      <div><div class="card-title">強化商材マスター設定（店舗単位）</div><div class="card-sub">商材名・単価は店舗ごとに1回設定すれば、その店舗の全スタッフに自動適用されます。</div></div>
+    </div>
+    <div id="boost-master-wrap"></div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+      <button class="save-btn" onclick="saveBoostMaster()">💾 店舗マスターを保存＆送信</button>
+    </div>
+    <div id="boost-master-saved-msg" style="display:none;margin-top:10px;font-size:12px;color:var(--green);text-align:right;">✅ 店舗マスターを保存してスプシに送信しました</div>
+  </div>
+
+  <!-- 強化商材 個人別 個数目標 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon purple">🌟</div>
+      <div><div class="card-title">強化商材 個数目標（スタッフ別）</div><div class="card-sub">単価は店舗マスターから自動反映。個数目標だけスタッフごとに入力できます。</div></div>
+    </div>
+    <div id="boost-tgt-wrap"></div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+      <button class="save-btn" onclick="saveBoostTargets()">💾 個数目標を保存＆送信</button>
+    </div>
+    <div id="boost-tgt-saved-msg" style="display:none;margin-top:10px;font-size:12px;color:var(--green);text-align:right;">✅ 強化商材目標を保存してスプシに送信しました</div>
   </div>
 </div>
 
@@ -420,6 +470,17 @@ input[type="date"].ti{color-scheme:dark;}
   </div>
 </div>
 
+<!-- ══════════ TAB5: 全体ダッシュボード（幹部MTG用） ══════════ -->
+<div class="tab-content" id="tab-dashboard">
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div class="card-title">🏢 全体ダッシュボード</div><div class="card-sub" id="dash2-updated">読み込み中...</div></div>
+    <button class="save-btn" onclick="loadDashboardData()">🔄 更新</button>
+  </div>
+  <div id="dash2-content">
+    <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <script>
@@ -427,7 +488,9 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbwgWDA5Yf0XpMLEVQEo1g0-PmptzM7oNEi275cAQ9ILJrMZraDGxMEEAYh12Pm4GUXd_A/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxCbai0PzU0BUi8L0E57ZDkQYgWYP9QEZQNoy5LPlhSMKZjVf-HJ67ViO5NnvV_qSC3zA/exec';
+// 全体ダッシュボード（幹部MTG用）専用GAS。別プロジェクトでデプロイしたURLを設定。
+var MTG_GAS_URL = 'https://script.google.com/macros/s/AKfycbzUnbeZwfCmot0BKUiJQbq4jvz-MtFR-1jg_Sh_cJFmNxfOUsa-4g20wGu12cZ70Abn/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -488,7 +551,15 @@ function saveCum(payload){
   if(staff){
     var sc = getCumStaff(staff,mk);
     localStorage.setItem('cum_s_'+staff+'_'+mk, JSON.stringify({sales:sc.sales+ts, newCount:sc.newCount+nc, retCount:sc.retCount+rc}));
+    // 強化商材の個数累計
+    var b1 = parseInt(payload.boost1)||0, b2 = parseInt(payload.boost2)||0, b3 = parseInt(payload.boost3)||0;
+    var bc = getCumBoost(staff, mk);
+    localStorage.setItem('cum_boost_'+staff+'_'+mk, JSON.stringify({b1:bc.b1+b1, b2:bc.b2+b2, b3:bc.b3+b3}));
   }
+}
+function getCumBoost(staff, mk){
+  try{ return JSON.parse(localStorage.getItem('cum_boost_'+staff+'_'+mk)||'{"b1":0,"b2":0,"b3":0}'); }
+  catch(e){ return {b1:0,b2:0,b3:0}; }
 }
 
 function getStaffList(){
@@ -497,6 +568,138 @@ function getStaffList(){
 function saveStaffName(name){
   var list = getStaffList();
   if(name && list.indexOf(name)===-1){ list.push(name); localStorage.setItem('staff_names',JSON.stringify(list)); }
+}
+
+// ── 店舗管理（oro / mem / plata） ──
+function getStaffStores(){
+  try{ return JSON.parse(localStorage.getItem('staff_stores')||'{}'); }catch(e){ return {}; }
+}
+function saveStaffStore(name, store){
+  var map = getStaffStores();
+  map[name] = store;
+  localStorage.setItem('staff_stores', JSON.stringify(map));
+}
+function getStaffStore(name){
+  var map = getStaffStores();
+  return map[name] || '未設定';
+}
+function removeStaffStore(name){
+  var map = getStaffStores();
+  delete map[name];
+  localStorage.setItem('staff_stores', JSON.stringify(map));
+}
+function showStaffStore(){
+  var staffInput = document.getElementById('f-staff');
+  var badge = document.getElementById('f-staff-store-badge');
+  if(!staffInput || !badge) return;
+  var name = staffInput.value.trim();
+  var store = name ? getStaffStore(name) : '';
+  if(name && store !== '未設定'){
+    badge.textContent = '🏢 所属店舗: ' + store;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+  loadHistory();
+}
+
+// ════════════════════════════════════════
+// 入力履歴（自分の送信内容を確認・重複チェック用）
+// ════════════════════════════════════════
+var histScope = 'today';
+
+function switchHistScope(scope){
+  histScope = scope;
+  document.getElementById('hist-tab-today').classList.toggle('active', scope==='today');
+  document.getElementById('hist-tab-month').classList.toggle('active', scope==='month');
+  loadHistory();
+}
+
+function loadHistory(){
+  var contEl = document.getElementById('hist-content');
+  if(!contEl) return;
+  var staffName = document.getElementById('f-staff').value.trim();
+
+  if(!staffName){
+    contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">担当スタッフを入力すると履歴が表示されます</p>';
+    return;
+  }
+  if(!GAS_URL || GAS_URL.indexOf('YOUR_GAS')!==-1){
+    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">⚠️ GAS URLが未設定です</p>';
+    return;
+  }
+
+  contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">読み込み中...</p>';
+
+  var oldScript = document.getElementById('hist-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._histTimeout = setTimeout(function(){
+    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">タイムアウトしました</p>';
+  }, 12000);
+
+  window.histCallback = function(json){
+    clearTimeout(window._histTimeout);
+    if(!json || json.status!=='ok'){
+      contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得エラー: '+(json?json.message:'不明')+'</p>';
+      return;
+    }
+    renderHistory(json);
+  };
+
+  var script = document.createElement('script');
+  script.id = 'hist-jsonp';
+  script.src = GAS_URL + '?action=history&staff=' + encodeURIComponent(staffName) + '&scope=' + histScope + '&callback=histCallback&t=' + Date.now();
+  script.onerror = function(){
+    clearTimeout(window._histTimeout);
+    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得に失敗しました</p>';
+  };
+  document.head.appendChild(script);
+}
+
+function renderHistory(json){
+  var contEl = document.getElementById('hist-content');
+  var rows = json.rows || [];
+
+  if(!rows.length){
+    contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">'+
+      (histScope==='today'?'本日':'今月')+'の入力はまだありません</p>';
+    return;
+  }
+
+  var totalSales=0, totalCnt=0;
+  var html = '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:560px;">';
+  html += '<tr><th>日付</th><th>新規技術</th><th>新規店販</th><th>既存技術</th><th>既存店販</th><th>売上合計</th><th>客数</th></tr>';
+
+  for(var i=0;i<rows.length;i++){
+    var r = rows[i];
+    totalSales += r.sales; totalCnt += r.total;
+    html += '<tr>';
+    html += '<td>'+r.date+'（'+r.dow+'）</td>';
+    html += '<td>'+fmtYen(r.newTech)+'</td>';
+    html += '<td>'+fmtYen(r.newRetail)+'</td>';
+    html += '<td>'+fmtYen(r.retTech)+'</td>';
+    html += '<td>'+fmtYen(r.retRetail)+'</td>';
+    html += '<td style="color:var(--gold2);font-weight:700;">'+fmtYen(r.sales)+'</td>';
+    html += '<td>'+r.total+'人</td>';
+    html += '</tr>';
+  }
+
+  if(rows.length>1){
+    html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
+    html += '<td>合計（'+rows.length+'件）</td><td>--</td><td>--</td><td>--</td><td>--</td>';
+    html += '<td style="color:var(--gold2);">'+fmtYen(totalSales)+'</td><td>'+totalCnt+'人</td>';
+    html += '</tr>';
+  }
+
+  html += '</table></div>';
+
+  if(rows.length>1 && histScope==='today'){
+    html += '<div style="margin-top:10px;padding:10px 14px;background:rgba(196,106,90,0.1);border:1px solid rgba(196,106,90,0.25);border-radius:8px;font-size:12px;color:var(--red);">'+
+      '⚠️ 本日すでに '+rows.length+' 件送信されています。重複入力でないか確認してください。</div>';
+  }
+
+  contEl.innerHTML = html;
 }
 
 function getTargets(){
@@ -670,6 +873,7 @@ async function submitForm(){
   var payload = {
     date: date,
     staff: staff,
+    store: getStaffStore(staff),
     newTech: ns, newRetail: nr, retTech: rs, retRetail: rr,
     newCount: nc, retCount: rc,
     cut: v('f-cut'), color: v('f-color'), perm: v('f-perm'), straight: v('f-straight'),
@@ -724,6 +928,7 @@ async function submitForm(){
   btn.disabled = false;
   clearForm();
   renderProgress();
+  loadHistory();
 }
 
 // ════════════════════════════════════════
@@ -793,6 +998,8 @@ function renderProgress(){
 
     var tgt      = getStaffTarget(name,month);
     var cum      = getCumStaff(name,mk);
+    var boostCum = getCumBoost(name,mk);
+    var boostTgt = getStaffBoostTarget(name, month-1);
     var totCnt   = cum.newCount+cum.retCount;
     var salesPct = tgt.sales>0?cum.sales/tgt.sales:0;
     var newPct   = tgt.newCount>0?cum.newCount/tgt.newCount:0;
@@ -837,10 +1044,43 @@ function renderProgress(){
           '<div><div style="color:var(--muted);font-size:10px;">既存</div><div style="color:var(--blue);font-weight:700;">'+tgt.retCount+'人</div></div>'+
           '<div><div style="color:var(--muted);font-size:10px;">総客数</div><div style="color:var(--gold2);font-weight:700;">'+tgt.totalCount+'人</div></div>'+
         '</div>'+
-      '</div>';
+      '</div>'+
+      buildBoostProgressHtml(boostCum, boostTgt);
     dashWrap.appendChild(div);
   }
   renderSalesBars();
+}
+
+function buildBoostProgressHtml(boostCum, boostTgt){
+  var labels = {b1:'強化商材①', b2:'強化商材②', b3:'強化商材③'};
+  var html = '<div style="margin-top:10px;padding:12px;background:rgba(160,90,172,0.05);border-radius:10px;border:1px solid rgba(160,90,172,0.15);">'+
+    '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">🌟 強化商材 進捗</div>';
+
+  ['b1','b2','b3'].forEach(function(bk){
+    var actCount = boostCum[bk] || 0;
+    var t = boostTgt[bk] || {price:0, count:0};
+    var tgtCount = t.count || 0;
+    var tgtAmount = (t.price||0) * tgtCount;
+    var actAmount = (t.price||0) * actCount;
+    var pct = tgtCount>0 ? Math.min(actCount/tgtCount,1) : 0;
+    var pctLabel = tgtCount>0 ? (actCount/tgtCount*100).toFixed(1)+'%' : '--';
+    var barC = pct>=1?'green':pct>=0.8?'gold':'red';
+
+    html += '<div style="margin-bottom:8px;padding:8px 10px;background:var(--card2);border-radius:8px;">'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">'+
+        '<span style="font-weight:700;">'+labels[bk]+'</span>'+
+        '<span style="color:'+(pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)')+';font-weight:700;">'+pctLabel+'</span>'+
+      '</div>'+
+      '<div class="kpi-bar-wrap"><div class="kpi-bar '+barC+'" style="width:'+(pct*100)+'%"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;">'+
+        '<span>個数: '+actCount+' / '+(tgtCount>0?tgtCount+'個':'未設定')+'</span>'+
+        '<span>金額: '+fmtYen(actAmount)+' / '+(tgtAmount>0?fmtYen(tgtAmount):'--')+'</span>'+
+      '</div>'+
+    '</div>';
+  });
+
+  html += '</div>';
+  return html;
 }
 
 // ════════════════════════════════════════
@@ -884,11 +1124,15 @@ function renderTargetTab(){
         for(var k=0;k<btns.length;k++) btns[k].classList.remove('active');
         this.classList.add('active');
         renderTargetTable();
+        renderBoostMaster();
+        renderBoostTargets();
       };
     })(i);
     mtabs.appendChild(btn);
   }
   renderTargetTable();
+  renderBoostMaster();
+  renderBoostTargets();
 }
 
 function renderTargetTable(){
@@ -1229,6 +1473,243 @@ function updateAutoRowTotal(key){
 // ════════════════════════════════════════
 // SAVE TARGETS
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// 強化商材 店舗マスター（商材名・単価を店舗単位で設定）
+// ════════════════════════════════════════
+var STORE_LIST = ['oro','mem','plata'];
+
+function getBoostMaster(){
+  try{ return JSON.parse(localStorage.getItem('boost_master_db')||'{}'); }catch(e){ return {}; }
+}
+function saveBoostMaster_db(bm){
+  localStorage.setItem('boost_master_db', JSON.stringify(bm));
+}
+// データ構造: { store: [ {month_idx}: {b1:{name,price}, b2:{...}, b3:{...}} ] }
+function getStoreBoostMaster(store, monthIdx){
+  var bm = getBoostMaster();
+  var raw = (bm[store] && bm[store][monthIdx]) ? bm[store][monthIdx] : {};
+  return {
+    b1: raw.b1 || {name:'', price:0},
+    b2: raw.b2 || {name:'', price:0},
+    b3: raw.b3 || {name:'', price:0}
+  };
+}
+
+function renderBoostMaster(){
+  var wrap = document.getElementById('boost-master-wrap');
+  if(!wrap) return;
+  var mi = selectedMonthIdx;
+
+  var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
+  html += '<th style="min-width:70px;text-align:left;">店舗</th>';
+  html += '<th colspan="2">強化商材①</th><th colspan="2">強化商材②</th><th colspan="2">強化商材③</th>';
+  html += '</tr><tr><th></th>';
+  for(var b=0;b<3;b++){
+    html += '<th style="font-size:9px;">商材名</th><th style="font-size:9px;">単価</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  STORE_LIST.forEach(function(store){
+    var m = getStoreBoostMaster(store, mi);
+    html += '<tr><td class="item-label" style="font-weight:800;">'+store+'</td>';
+    ['b1','b2','b3'].forEach(function(bk){
+      var bd = m[bk];
+      html += '<td><input type="text" class="boost-name-input" style="width:110px;" data-store="'+store+'" data-boost="'+bk+'" data-field="name" value="'+(bd.name||'')+'" placeholder="商材名"></td>';
+      html += '<td><input type="number" class="tgt-input" style="width:80px;" data-store="'+store+'" data-boost="'+bk+'" data-field="price" value="'+(bd.price||'')+'" placeholder="0"></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function saveBoostMaster(){
+  var bm = getBoostMaster();
+  var mi = selectedMonthIdx;
+
+  STORE_LIST.forEach(function(store){
+    if(!bm[store]) bm[store] = [];
+    while(bm[store].length <= mi) bm[store].push({});
+    if(!bm[store][mi]) bm[store][mi] = {};
+
+    ['b1','b2','b3'].forEach(function(bk){
+      var nameInp  = document.querySelector('[data-store="'+store+'"][data-boost="'+bk+'"][data-field="name"]');
+      var priceInp = document.querySelector('[data-store="'+store+'"][data-boost="'+bk+'"][data-field="price"]');
+      bm[store][mi][bk] = {
+        name:  nameInp ? nameInp.value.trim() : '',
+        price: priceInp ? (parseInt(priceInp.value)||0) : 0
+      };
+    });
+  });
+  saveBoostMaster_db(bm);
+  sendBoostMasterToGAS(mi+1);
+  renderBoostTargets(); // 個数目標側の単価表示も更新
+
+  var msg = document.getElementById('boost-master-saved-msg');
+  if(msg){ msg.style.display='block'; setTimeout(function(){ msg.style.display='none'; },3000); }
+}
+
+async function sendBoostMasterToGAS(month){
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
+  var mi = month - 1;
+  var bm = getBoostMaster();
+  var now = new Date();
+
+  var storeMasters = [];
+  STORE_LIST.forEach(function(store){
+    var m = (bm[store] && bm[store][mi]) ? bm[store][mi] : {};
+    var b1 = m.b1 || {name:'',price:0};
+    var b2 = m.b2 || {name:'',price:0};
+    var b3 = m.b3 || {name:'',price:0};
+    storeMasters.push({
+      store: store,
+      b1Name: b1.name, b1Price: b1.price,
+      b2Name: b2.name, b2Price: b2.price,
+      b3Name: b3.name, b3Price: b3.price
+    });
+  });
+
+  var payload = {
+    date: now.getFullYear()+'-'+(month<10?'0'+month:''+month)+'-01',
+    staff: '__boost_master_only__',
+    newTech:0, newRetail:0, retTech:0, retRetail:0, newCount:0, retCount:0,
+    cut:0, color:0, perm:0, straight:0, treat:0, spa:0, boost1:0, boost2:0, boost3:0, memo:'',
+    timestamp: now.toLocaleString('ja-JP'),
+    isBoostMasterOnly: true,
+    store_boost_masters: JSON.stringify(storeMasters)
+  };
+  try{ await sendViaForm(payload, GAS_URL); }catch(e){ console.warn('Boost master send:',e.message); }
+}
+
+// ════════════════════════════════════════
+// 強化商材 個数目標（スタッフ別。単価は店舗マスターから自動反映）
+// ════════════════════════════════════════
+function getBoostTargets(){
+  try{ return JSON.parse(localStorage.getItem('boost_targets_db')||'{}'); }catch(e){ return {}; }
+}
+function saveBoostTargets_db(bt){
+  localStorage.setItem('boost_targets_db', JSON.stringify(bt));
+}
+// データ構造: { staffName: [ {month_idx}: {b1:count, b2:count, b3:count} ] }
+function getStaffBoostCountTarget(staffName, monthIdx){
+  var bt = getBoostTargets();
+  var raw = (bt[staffName] && bt[staffName][monthIdx]) ? bt[staffName][monthIdx] : {};
+  return { b1: raw.b1||0, b2: raw.b2||0, b3: raw.b3||0 };
+}
+// 互換用：店舗マスターの単価＋個人の個数目標を合成して返す（進捗表示で使用）
+function getStaffBoostTarget(staffName, monthIdx){
+  var store = getStaffStore(staffName);
+  var master = (store && store!=='未設定') ? getStoreBoostMaster(store, monthIdx) : {b1:{price:0,name:''},b2:{price:0,name:''},b3:{price:0,name:''}};
+  var counts = getStaffBoostCountTarget(staffName, monthIdx);
+  return {
+    b1: {price: master.b1.price||0, count: counts.b1||0, name: master.b1.name||''},
+    b2: {price: master.b2.price||0, count: counts.b2||0, name: master.b2.name||''},
+    b3: {price: master.b3.price||0, count: counts.b3||0, name: master.b3.name||''}
+  };
+}
+
+function renderBoostTargets(){
+  var wrap = document.getElementById('boost-tgt-wrap');
+  if(!wrap) return;
+  var staffList = getStaffList();
+  var mi = selectedMonthIdx;
+
+  if(!staffList.length){
+    wrap.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:10px 0;">スタッフが登録されていません</p>';
+    return;
+  }
+
+  var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
+  html += '<th style="min-width:90px;text-align:left;">スタッフ</th>';
+  html += '<th colspan="3">強化商材①</th><th colspan="3">強化商材②</th><th colspan="3">強化商材③</th>';
+  html += '</tr><tr><th></th>';
+  for(var b=0;b<3;b++){
+    html += '<th style="font-size:9px;color:var(--blue);">単価(自動)</th><th style="font-size:9px;">個数目標</th><th style="font-size:9px;color:var(--green);">金額目標</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  for(var si=0; si<staffList.length; si++){
+    var nm = staffList[si];
+    var t = getStaffBoostTarget(nm, mi);
+    var store = getStaffStore(nm);
+    html += '<tr><td class="item-label">'+nm+' <span style="font-size:9px;color:var(--muted);">('+store+')</span></td>';
+    ['b1','b2','b3'].forEach(function(bk){
+      var bd = t[bk];
+      var amount = bd.price * bd.count;
+      html += '<td style="text-align:right;color:var(--blue);font-size:11px;padding:6px 10px;">'+(bd.price>0?bd.price.toLocaleString():'未設定')+(bd.name?'<br><span style="font-size:9px;color:var(--muted);">'+bd.name+'</span>':'')+'</td>';
+      html += '<td><input type="number" class="tgt-input" style="width:60px;" data-staff="'+nm+'" data-boost="'+bk+'" data-field="count" value="'+(bd.count||'')+'" placeholder="0" oninput="updateBoostAmount(this)"></td>';
+      html += '<td class="total-cell" id="boost-amt-'+nm+'-'+bk+'" data-price="'+bd.price+'" style="min-width:80px;">'+(amount>0?amount.toLocaleString():'0')+'</td>';
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function updateBoostAmount(inp){
+  var staff = inp.getAttribute('data-staff');
+  var boost = inp.getAttribute('data-boost');
+  var countInp = document.querySelector('[data-staff="'+staff+'"][data-boost="'+boost+'"][data-field="count"]');
+  var amtEl = document.getElementById('boost-amt-'+staff+'-'+boost);
+  if(!amtEl) return;
+  var price = parseInt(amtEl.getAttribute('data-price'))||0;
+  var count = countInp ? (parseInt(countInp.value)||0) : 0;
+  amtEl.textContent = (price*count).toLocaleString();
+}
+
+function saveBoostTargets(){
+  var staffList = getStaffList();
+  var bt = getBoostTargets();
+  var mi = selectedMonthIdx;
+
+  for(var si=0; si<staffList.length; si++){
+    var nm = staffList[si];
+    if(!bt[nm]) bt[nm] = [];
+    while(bt[nm].length <= mi) bt[nm].push({});
+    if(!bt[nm][mi]) bt[nm][mi] = {};
+
+    ['b1','b2','b3'].forEach(function(bk){
+      var countInp = document.querySelector('[data-staff="'+nm+'"][data-boost="'+bk+'"][data-field="count"]');
+      bt[nm][mi][bk] = countInp ? (parseInt(countInp.value)||0) : 0;
+    });
+  }
+  saveBoostTargets_db(bt);
+  sendBoostTargetsToGAS(mi+1);
+
+  var msg = document.getElementById('boost-tgt-saved-msg');
+  if(msg){ msg.style.display='block'; setTimeout(function(){ msg.style.display='none'; },3000); }
+}
+
+async function sendBoostTargetsToGAS(month){
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
+  var staffList = getStaffList();
+  var mi = month - 1;
+  var now = new Date();
+
+  var boostStaffTargets = [];
+  for(var i=0; i<staffList.length; i++){
+    var nm = staffList[i];
+    var t = getStaffBoostTarget(nm, mi);
+    boostStaffTargets.push({
+      staff: nm,
+      b1Price: t.b1.price, b1Count: t.b1.count, b1Amount: t.b1.price*t.b1.count,
+      b2Price: t.b2.price, b2Count: t.b2.count, b2Amount: t.b2.price*t.b2.count,
+      b3Price: t.b3.price, b3Count: t.b3.count, b3Amount: t.b3.price*t.b3.count
+    });
+  }
+
+  var payload = {
+    date: now.getFullYear()+'-'+(month<10?'0'+month:''+month)+'-01',
+    staff: '__boost_target_only__',
+    newTech:0, newRetail:0, retTech:0, retRetail:0, newCount:0, retCount:0,
+    cut:0, color:0, perm:0, straight:0, treat:0, spa:0, boost1:0, boost2:0, boost3:0, memo:'',
+    timestamp: now.toLocaleString('ja-JP'),
+    isBoostTargetOnly: true,
+    boost_staff_targets: JSON.stringify(boostStaffTargets)
+  };
+  try{ await sendViaForm(payload, GAS_URL); }catch(e){ console.warn('Boost target send:',e.message); }
+}
+
 function saveTargets(){
   var staffList=getStaffList(); var tgts=getTargets(); var mi=selectedMonthIdx;
   for(var si=0;si<staffList.length;si++){
@@ -1274,7 +1755,7 @@ async function sendTargetsToGAS(month){
     var nc  = t.newCount  || 0;
     var rc  = t.retCount  || 0;
     staffTargets.push({
-      staff:nm, newTech:nt, newRetail:nr, retTech:rt, retRetail:rr,
+      staff:nm, store:getStaffStore(nm), newTech:nt, newRetail:nr, retTech:rt, retRetail:rr,
       sales:nt+nr+rt+rr, newCount:nc, retCount:rc, totalCount:nc+rc
     });
   }
@@ -1317,11 +1798,25 @@ function renderStaffManageList(){
   }
   for(var i=0;i<list.length;i++){
     (function(name,sidx){
+      var store = getStaffStore(name);
       var item=document.createElement('div');
       item.className='staff-manage-item';
+      item.style.flexWrap='wrap';
       var nameDiv=document.createElement('div');
       nameDiv.className='staff-manage-name';
-      nameDiv.textContent='スタッフ: '+name;
+      nameDiv.innerHTML='スタッフ: '+name+' <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(200,164,90,0.15);color:var(--gold);margin-left:6px;">'+store+'</span>';
+      var storeSel=document.createElement('select');
+      storeSel.className='staff-manage-input';
+      storeSel.style.width='100px';
+      storeSel.innerHTML='<option value="oro">oro</option><option value="mem">mem</option><option value="plata">plata</option>';
+      storeSel.value = (store==='未設定') ? 'oro' : store;
+      var storeBtn=document.createElement('button');
+      storeBtn.className='btn-rename'; storeBtn.textContent='店舗変更';
+      storeBtn.onclick=function(){
+        saveStaffStore(name, storeSel.value);
+        renderStaffManageList();
+        alert(name+' の所属店舗を '+storeSel.value+' に変更しました');
+      };
       var input=document.createElement('input');
       input.type='text'; input.className='staff-manage-input';
       input.placeholder='新しい名前'; input.id='rename-'+sidx;
@@ -1331,7 +1826,9 @@ function renderStaffManageList(){
       var deleteBtn=document.createElement('button');
       deleteBtn.className='btn-delete'; deleteBtn.textContent='削除';
       deleteBtn.onclick=function(){ deleteStaff(name); };
-      item.appendChild(nameDiv); item.appendChild(input);
+      item.appendChild(nameDiv);
+      item.appendChild(storeSel); item.appendChild(storeBtn);
+      item.appendChild(input);
       item.appendChild(renameBtn); item.appendChild(deleteBtn);
       wrap.appendChild(item);
     })(list[i],i);
@@ -1340,11 +1837,14 @@ function renderStaffManageList(){
 
 function addStaffToTarget(){
   var input=document.getElementById('new-staff-name');
+  var storeSel=document.getElementById('new-staff-store');
   var name=input.value.trim();
+  var store=storeSel?storeSel.value:'oro';
   if(!name){ alert('スタッフ名を入力してください'); return; }
   var list=getStaffList();
   if(list.indexOf(name)!==-1){ alert(name+' はすでに登録されています'); return; }
   saveStaffName(name);
+  saveStaffStore(name, store);
   input.value='';
   updateStaffSuggest();
   renderStaffManageList();
@@ -1358,6 +1858,7 @@ function deleteStaff(name){
   localStorage.setItem('staff_names',JSON.stringify(newList));
   var tgts=getTargets();
   if(tgts[name]){ delete tgts[name]; saveTargets_db(tgts); }
+  removeStaffStore(name);
   updateStaffSuggest(); renderStaffManageList(); renderTargetTable();
   alert(name+' を削除しました');
 }
@@ -1375,6 +1876,8 @@ function renameStaff(oldName,idx){
   localStorage.setItem('staff_names',JSON.stringify(newList));
   var tgts=getTargets();
   if(tgts[oldName]){ tgts[newName]=tgts[oldName]; delete tgts[oldName]; saveTargets_db(tgts); }
+  var storeMap = getStaffStores();
+  if(storeMap[oldName]){ saveStaffStore(newName, storeMap[oldName]); removeStaffStore(oldName); }
   updateStaffSuggest(); renderStaffManageList(); renderTargetTable();
   alert(oldName+' を '+newName+' に変更しました');
 }
@@ -1423,6 +1926,170 @@ function switchMainTab(id,el){
   if(id==='tab-progress'){ renderProgress(); }
   if(id==='tab-target'){   renderTargetTab(); }
   if(id==='tab-yearly'){   renderYearly(); }
+  if(id==='tab-dashboard'){ loadDashboardData(); }
+}
+
+// ════════════════════════════════════════
+// 全体ダッシュボード（幹部MTG用・読み取り専用）
+// ════════════════════════════════════════
+function dFmtYen(n){ return '¥'+(n||0).toLocaleString(); }
+function dFmtNum(n){ return (n||0).toLocaleString(); }
+function dPctColor(p){ return p>=100?'var(--green)':p>=80?'var(--gold)':'var(--red)'; }
+
+function loadDashboardData(){
+  var updEl = document.getElementById('dash2-updated');
+  var contEl = document.getElementById('dash2-content');
+  if(!contEl) return;
+
+  if(!MTG_GAS_URL||MTG_GAS_URL.indexOf('YOUR_GAS')!==-1){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">⚠️ MTG_GAS_URLが未設定です</div>';
+    return;
+  }
+
+  contEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>';
+  if(updEl) updEl.textContent = '読み込み中...';
+
+  var oldScript = document.getElementById('dash2-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._dash2Timeout = setTimeout(function(){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ タイムアウトしました</div>';
+  }, 15000);
+
+  window.dash2Callback = function(json){
+    clearTimeout(window._dash2Timeout);
+    if(!json || json.status!=='ok'){
+      contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ データ取得エラー: '+(json?json.message:'不明')+'</div>';
+      return;
+    }
+    if(updEl) updEl.textContent = '最終更新: '+(json.updatedAt||'--');
+    renderDashboard(json);
+  };
+
+  var script = document.createElement('script');
+  script.id = 'dash2-jsonp';
+  script.src = MTG_GAS_URL + '?action=mtg&callback=dash2Callback&t=' + Date.now();
+  script.onerror = function(){
+    clearTimeout(window._dash2Timeout);
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ データの取得に失敗しました</div>';
+  };
+  document.head.appendChild(script);
+}
+
+function renderDashboard(d){
+  var s = d.summary;
+  var salesPct = s.target>0 ? Math.round(s.sales/s.target*1000)/10 : 0;
+  var html = '';
+
+  // KPIカード
+  html += '<div class="total-grid" style="margin-bottom:16px;">';
+  html += '<div class="total-item"><div class="total-item-label">売上合計</div><div class="total-item-val">'+dFmtYen(s.sales)+'</div><div class="total-item-sub">目標 '+dFmtYen(s.target)+'</div></div>';
+  var landingDiff = s.target>0 ? s.landing-s.target : null;
+  var landingPct  = s.target>0 ? Math.round(s.landing/s.target*1000)/10 : null;
+  html += '<div class="total-item"><div class="total-item-label">着地見込み</div><div class="total-item-val">'+(s.landing>0?dFmtYen(s.landing):'--')+'</div>';
+  html += '<div class="total-item-sub" style="color:'+(landingDiff!==null?(landingDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';font-weight:700;">'+
+          (landingDiff!==null?(landingDiff>=0?'+':'')+dFmtYen(landingDiff)+'（'+landingPct+'%）':'目標未設定')+'</div></div>';
+  html += '<div class="total-item"><div class="total-item-label">新規客数</div><div class="total-item-val">'+dFmtNum(s.newCount)+'人</div><div class="total-item-sub">既存 '+dFmtNum(s.retCount)+'人</div></div>';
+  html += '<div class="total-item"><div class="total-item-label">総客数</div><div class="total-item-val">'+dFmtNum(s.total)+'人</div><div class="total-item-sub">'+d.month+'月累計</div></div>';
+  html += '</div>';
+
+  // 店舗別合計
+  if(d.stores && d.stores.length){
+    html += '<div class="card">';
+    html += '<div class="card-head"><div class="card-icon gold">🏢</div><div><div class="card-title">店舗別 当月合計</div><div class="card-sub">全体 vs 店舗別（oro / mem / plata）</div></div></div>';
+    html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:680px;"><tr><th>店舗</th><th>新規技術</th><th>新規店販</th><th>既存技術</th><th>既存店販</th><th>売上合計</th><th>新規</th><th>既存</th><th>総客数</th></tr>';
+    var sTotalSales=0,sTotalNC=0,sTotalRC=0,sTotalTC=0;
+    for(var sti=0;sti<d.stores.length;sti++){
+      var st=d.stores[sti];
+      sTotalSales+=st.sales; sTotalNC+=st.newCount; sTotalRC+=st.retCount; sTotalTC+=st.total;
+      html += '<tr><td style="text-align:left;font-weight:800;">'+st.store+'</td>';
+      html += '<td>'+dFmtYen(st.newTech)+'</td><td>'+dFmtYen(st.newRetail)+'</td><td>'+dFmtYen(st.retTech)+'</td><td>'+dFmtYen(st.retRetail)+'</td>';
+      html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(st.sales)+'</td>';
+      html += '<td>'+dFmtNum(st.newCount)+'人</td><td>'+dFmtNum(st.retCount)+'人</td><td style="font-weight:700;">'+dFmtNum(st.total)+'人</td></tr>';
+    }
+    html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;"><td style="text-align:left;">全体合計</td><td>--</td><td>--</td><td>--</td><td>--</td>';
+    html += '<td style="color:var(--gold2);">'+dFmtYen(sTotalSales)+'</td><td>'+dFmtNum(sTotalNC)+'人</td><td>'+dFmtNum(sTotalRC)+'人</td><td>'+dFmtNum(sTotalTC)+'人</td></tr>';
+    html += '</table></div></div>';
+  }
+
+  // 強化商材 店舗別実績
+  if(d.boost && d.boost.length){
+    html += '<div class="card">';
+    html += '<div class="card-head"><div class="card-icon purple">🌟</div><div><div class="card-title">強化商材 店舗別 当月実績</div></div></div>';
+    html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:680px;"><tr><th>店舗</th><th>商材①</th><th>実績①</th><th>商材②</th><th>実績②</th><th>商材③</th><th>実績③</th></tr>';
+    for(var bsi=0;bsi<d.boost.length;bsi++){
+      var bs=d.boost[bsi];
+      html += '<tr><td style="text-align:left;font-weight:800;">'+bs.store+'</td>';
+      ['b1','b2','b3'].forEach(function(bk){
+        var b=bs[bk];
+        html += '<td style="text-align:left;font-size:11px;">'+(b.name||'未設定')+(b.price>0?'<br><span style="color:var(--muted);font-size:10px;">単価'+dFmtYen(b.price)+'</span>':'')+'</td>';
+        html += '<td>'+b.actualCount+'個<br><span style="color:var(--gold2);font-size:11px;">'+dFmtYen(b.actualAmount)+'</span></td>';
+      });
+      html += '</tr>';
+    }
+    html += '</table></div></div>';
+  }
+
+  // スタッフ別テーブル
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon gold">👤</div><div><div class="card-title">スタッフ別 当月進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月</div></div></div>';
+  html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:760px;"><tr><th>担当</th><th>売上実績</th><th>売上目標</th><th>差異</th><th>達成率</th><th>着地見込み</th><th>新規</th><th>既存</th><th>総客数</th></tr>';
+
+  var totalSales=0,totalTarget=0,totalLanding=0,totalNC=0,totalRC=0,totalTC=0;
+  for(var i=0;i<d.staff.length;i++){
+    var stf=d.staff[i];
+    var pct = stf.target>0?Math.round(stf.sales/stf.target*1000)/10:0;
+    var diff = stf.target>0?stf.sales-stf.target:null;
+    totalSales+=stf.sales; totalTarget+=stf.target; totalLanding+=stf.landing;
+    totalNC+=stf.newCount; totalRC+=stf.retCount; totalTC+=stf.total;
+
+    html += '<tr><td style="text-align:left;font-weight:700;">'+stf.name+'</td>';
+    html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(stf.sales)+'</td>';
+    html += '<td style="color:var(--blue);">'+(stf.target>0?dFmtYen(stf.target):'未設定')+'</td>';
+    html += '<td style="color:'+(diff!==null?(diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(diff!==null?(diff>=0?'+':'')+dFmtYen(diff):'--')+'</td>';
+    html += '<td class="pct-cell" style="color:'+(stf.target>0?dPctColor(pct):'var(--muted)')+';">'+(stf.target>0?pct+'%':'--')+'</td>';
+    html += '<td>'+(stf.landing>0?dFmtYen(stf.landing):'--')+'</td>';
+    html += '<td>'+dFmtNum(stf.newCount)+'人</td><td>'+dFmtNum(stf.retCount)+'人</td><td style="font-weight:700;">'+dFmtNum(stf.total)+'人</td></tr>';
+  }
+
+  var totPct = totalTarget>0?Math.round(totalSales/totalTarget*1000)/10:0;
+  var totDiff = totalTarget>0?totalSales-totalTarget:null;
+  html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
+  html += '<td style="text-align:left;">合計</td>';
+  html += '<td style="color:var(--gold2);">'+dFmtYen(totalSales)+'</td>';
+  html += '<td style="color:var(--blue);">'+(totalTarget>0?dFmtYen(totalTarget):'--')+'</td>';
+  html += '<td style="color:'+(totDiff!==null?(totDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(totDiff!==null?(totDiff>=0?'+':'')+dFmtYen(totDiff):'--')+'</td>';
+  html += '<td style="color:'+(totalTarget>0?dPctColor(totPct):'var(--muted)')+';">'+(totalTarget>0?totPct+'%':'--')+'</td>';
+  html += '<td>'+(totalLanding>0?dFmtYen(totalLanding):'--')+'</td>';
+  html += '<td>'+dFmtNum(totalNC)+'人</td><td>'+dFmtNum(totalRC)+'人</td><td>'+dFmtNum(totalTC)+'人</td></tr>';
+  html += '</table></div></div>';
+
+  // 年間推移テーブル
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon green">📈</div><div><div class="card-title">年間 月別推移</div><div class="card-sub">'+d.year+'年</div></div></div>';
+  html += '<div style="overflow-x:auto;"><table class="yr-table"><tr><th>項目</th>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    html += '<th'+(d.monthly[mi].month===(d.month+'月')?' style="color:var(--gold2);"':'')+'>'+d.monthly[mi].month+'</th>';
+  }
+  html += '</tr><tr><td>売上実績</td>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    var mv=d.monthly[mi]; var isCur=mv.month===(d.month+'月');
+    html += '<td'+(isCur?' style="color:var(--gold2);font-weight:700;"':'')+'>'+(mv.sales>0?dFmtYen(mv.sales):'--')+'</td>';
+  }
+  html += '</tr><tr><td>売上目標</td>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    var mv=d.monthly[mi];
+    html += '<td style="color:var(--blue);">'+(mv.target>0?dFmtYen(mv.target):'--')+'</td>';
+  }
+  html += '</tr><tr><td>達成率</td>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    var mv=d.monthly[mi];
+    var pp = mv.target>0&&mv.sales>0?Math.round(mv.sales/mv.target*1000)/10:null;
+    html += '<td class="pct-cell" style="color:'+(pp!==null?dPctColor(pp):'var(--muted)')+';">'+(pp!==null?pp+'%':'--')+'</td>';
+  }
+  html += '</tr></table></div></div>';
+
+  document.getElementById('dash2-content').innerHTML = html;
 }
 
 // ════════════════════════════════════════
