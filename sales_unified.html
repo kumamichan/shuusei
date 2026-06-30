@@ -484,7 +484,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbyE3A2VakxD6O57HxzU9ysInvHE2TMs-AuJ7ExDVM0TIeZbTBrxCggR7Zt--S0o89dSBQ/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxbgWsDQ_BVB8ZH4tuLnKvDvDwidUgJoAxdazCbn_0NCJcUF-KF-JSU7hqx9444YSFXuA/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -2227,6 +2227,119 @@ function renderDashboard(d){
     html += '</table></div></div>';
   }
 
+  // 店舗別スタッフ進捗（リデザイン）
+  if(d.storeGroups && d.storeGroups.length){
+    html += '<div class="card">';
+    html += '<div class="card-head"><div class="card-icon gold">🏢</div><div><div class="card-title">店舗別 スタッフ進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月</div></div></div>';
+
+    for(var sgi=0; sgi<d.storeGroups.length; sgi++){
+      var sg = d.storeGroups[sgi];
+      var sgPct = sg.target>0 ? Math.min(sg.pct/100, 1) : 0;
+      var sgBarC = sg.pct>=100?'var(--green)':sg.pct>=80?'var(--gold)':'var(--red)';
+      var sgDiffStr = sg.diff!==null ? (sg.diff>=0?'+':'')+dFmtYen(sg.diff) : '--';
+
+      html += '<div style="margin-bottom:16px;">';
+
+      // 店舗KPIカード
+      html += '<div style="background:var(--card2);border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:4px solid '+sgBarC+';">';
+      html += '<div style="font-family:Syne,sans-serif;font-size:15px;font-weight:800;margin-bottom:10px;">'+sg.store+'</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">';
+      html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">売上目標</div><div style="font-size:12px;font-weight:700;color:var(--blue);">'+(sg.target>0?dFmtYen(sg.target):'未設定')+'</div></div>';
+      html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">売上実績</div><div style="font-size:12px;font-weight:700;color:var(--gold2);">'+dFmtYen(sg.sales)+'</div></div>';
+      html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">差額</div><div style="font-size:12px;font-weight:700;color:'+(sg.diff!==null?(sg.diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">' + sgDiffStr + '</div></div>';
+      html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">達成率</div><div style="font-size:16px;font-weight:800;color:'+sgBarC+';">'+(sg.target>0?sg.pct+'%':'--')+'</div></div>';
+      html += '</div>';
+      html += '<div style="margin-top:10px;height:10px;background:var(--border);border-radius:5px;overflow:hidden;">';
+      html += '<div style="height:100%;width:'+(sgPct*100)+'%;background:'+sgBarC+';border-radius:5px;"></div></div>';
+      html += '</div>';
+
+      // スタッフ一覧
+      if(sg.staff && sg.staff.length){
+        html += '<div style="overflow-x:auto;"><table class="yr-table">';
+        html += '<tr><th style="text-align:left;">担当</th><th>目標</th><th>実績</th><th>着地</th><th>差額</th><th>達成率</th></tr>';
+        for(var si2=0; si2<sg.staff.length; si2++){
+          var stf2 = sg.staff[si2];
+          var sc2 = stf2.pct>=100?'var(--green)':stf2.pct>=80?'var(--gold)':'var(--red)';
+          html += '<tr>';
+          html += '<td style="text-align:left;font-weight:700;">'+stf2.name+'</td>';
+          html += '<td style="color:var(--blue);">'+(stf2.target>0?dFmtYen(stf2.target):'--')+'</td>';
+          html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(stf2.sales)+'</td>';
+          html += '<td>'+(stf2.landing>0?dFmtYen(stf2.landing):'--')+'</td>';
+          html += '<td style="color:'+(stf2.diff!==null?(stf2.diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(stf2.diff!==null?(stf2.diff>=0?'+':'')+dFmtYen(stf2.diff):'--')+'</td>';
+          html += '<td style="font-weight:800;color:'+(stf2.target>0?sc2:'var(--muted)')+';">'+(stf2.target>0?stf2.pct+'%':'--')+'</td>';
+          html += '</tr>';
+        }
+        html += '</table></div>';
+      } else {
+        html += '<p style="color:var(--muted);font-size:11px;padding:8px 0;">スタッフ未登録</p>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // スタッフ別テーブル（強化商材進捗付き）
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon gold">👤</div><div><div class="card-title">スタッフ別 当月進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月 / 売上＋強化商材</div></div></div>';
+
+  var totalSales=0,totalTarget=0,totalLanding=0,totalNC=0,totalRC=0,totalTC=0;
+  for(var i=0;i<d.staff.length;i++){
+    var stf=d.staff[i];
+    var pct = stf.target>0?Math.round(stf.sales/stf.target*1000)/10:0;
+    var diff = stf.target>0?stf.sales-stf.target:null;
+    var barW = stf.target>0?Math.min(pct,100):0;
+    var barC2 = pct>=100?'var(--green)':pct>=80?'var(--gold)':'var(--red)';
+    totalSales+=stf.sales; totalTarget+=stf.target; totalLanding+=stf.landing;
+    totalNC+=stf.newCount; totalRC+=stf.retCount; totalTC+=stf.total;
+
+    html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">';
+    html += '<div style="font-weight:800;font-size:13px;">'+stf.name+'</div>';
+    html += '<div style="display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">';
+    html += '<span>目標 <strong style="color:var(--blue);">'+(stf.target>0?dFmtYen(stf.target):'未設定')+'</strong></span>';
+    html += '<span>実績 <strong style="color:var(--gold2);">'+dFmtYen(stf.sales)+'</strong></span>';
+    html += '<span>着地 <strong>'+(stf.landing>0?dFmtYen(stf.landing):'--')+'</strong></span>';
+    html += '<span style="color:'+barC2+';font-weight:800;font-size:14px;">'+(stf.target>0?pct+'%':'--')+'</span>';
+    if(diff!==null) html += '<span style="color:'+(diff>=0?'var(--green)':'var(--red)')+';font-size:11px;">'+(diff>=0?'+':'')+dFmtYen(diff)+'</span>';
+    html += '</div></div>';
+    html += '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;">';
+    html += '<div style="height:100%;width:'+barW+'%;background:'+barC2+';border-radius:4px;"></div></div>';
+
+    if(stf.boost){
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+      ['b1','b2','b3'].forEach(function(bk,bidx){
+        var b = stf.boost[bk];
+        var bPct = b.tgtCount>0 ? Math.min(b.actualCount/b.tgtCount,1) : 0;
+        var bPctLabel = b.tgtCount>0 ? (b.actualCount/b.tgtCount*100).toFixed(0)+'%' : '--';
+        var bBarC = bPct>=1?'var(--green)':bPct>=0.8?'var(--gold)':'var(--red)';
+        html += '<div style="background:var(--card2);border-radius:8px;padding:8px 10px;">';
+        html += '<div style="font-size:9px;color:var(--muted);margin-bottom:4px;">商材'+(bidx+1)+'</div>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">';
+        html += '<span style="font-weight:700;">'+b.actualCount+'個</span>';
+        html += '<span style="color:'+bBarC+';font-weight:700;">'+bPctLabel+'</span>';
+        html += '</div>';
+        html += '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">';
+        html += '<div style="height:100%;width:'+(bPct*100)+'%;background:'+bBarC+';"></div></div>';
+        html += '<div style="font-size:9px;color:var(--muted);margin-top:3px;">目標'+b.tgtCount+'個</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  var totPct = totalTarget>0?Math.round(totalSales/totalTarget*1000)/10:0;
+  var totDiff = totalTarget>0?totalSales-totalTarget:null;
+  html += '<div style="background:rgba(74,140,106,0.08);border-radius:8px;padding:10px 14px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-weight:700;">';
+  html += '<span>合計</span>';
+  html += '<span>目標 <span style="color:var(--blue);">'+(totalTarget>0?dFmtYen(totalTarget):'--')+'</span></span>';
+  html += '<span>実績 <span style="color:var(--gold2);">'+dFmtYen(totalSales)+'</span></span>';
+  html += '<span>差額 <span style="color:'+(totDiff!==null?(totDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(totDiff!==null?(totDiff>=0?'+':'')+dFmtYen(totDiff):'--')+'</span></span>';
+  html += '<span style="color:'+(totalTarget>0?dPctColor(totPct):'var(--muted)')+';font-size:14px;">'+(totalTarget>0?totPct+'%':'--')+'</span>';
+  html += '</div>';
+  html += '</div>';
+
+
   // 強化商材 店舗別実績
   if(d.boost && d.boost.length){
     html += '<div class="card">';
@@ -2244,91 +2357,6 @@ function renderDashboard(d){
     }
     html += '</table></div></div>';
   }
-
-  // 店舗別スタッフ集計（店舗ごとにグループ化して進捗表示）
-  if(d.storeGroups && d.storeGroups.length){
-    html += '<div class="card">';
-    html += '<div class="card-head"><div class="card-icon gold">🏢</div><div><div class="card-title">店舗別 スタッフ進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月 / 店舗ごとの合計と個人進捗</div></div></div>';
-
-    for(var sgi=0; sgi<d.storeGroups.length; sgi++){
-      var sg = d.storeGroups[sgi];
-      var sgPct = sg.target>0 ? Math.min(sg.pct/100, 1) : 0;
-      var sgBarC = sg.pct>=100?'var(--green)':sg.pct>=80?'var(--gold)':'var(--red)';
-
-      // 店舗ヘッダー（合計KPI）
-      html += '<div style="margin-bottom:12px;padding:12px 14px;background:var(--card2);border-radius:10px;border-left:3px solid '+sgBarC+';">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">';
-      html += '<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:800;">'+sg.store+'</div>';
-      html += '<div style="display:flex;gap:16px;font-size:12px;">';
-      html += '<span>実績 <strong style="color:var(--gold2);">'+dFmtYen(sg.sales)+'</strong></span>';
-      html += '<span>目標 <strong style="color:var(--blue);">'+(sg.target>0?dFmtYen(sg.target):'未設定')+'</strong></span>';
-      html += '<span style="color:'+sgBarC+';font-weight:700;">'+(sg.target>0?sg.pct+'%':'--')+'</span>';
-      if(sg.diff!==null) html += '<span style="color:'+(sg.diff>=0?'var(--green)':'var(--red)')+';font-size:11px;">'+(sg.diff>=0?'+':'')+dFmtYen(sg.diff)+'</span>';
-      html += '</div></div>';
-
-      // 進捗バー
-      html += '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;">';
-      html += '<div style="height:100%;width:'+(sgPct*100)+'%;background:'+sgBarC+';border-radius:4px;transition:width 0.6s;"></div></div>';
-
-      // スタッフ一覧（その店舗のスタッフ）
-      if(sg.staff && sg.staff.length){
-        html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:540px;">';
-        html += '<tr><th>担当</th><th>売上実績</th><th>売上目標</th><th>差異</th><th>達成率</th><th>着地見込み</th><th>総客数</th></tr>';
-        for(var si2=0; si2<sg.staff.length; si2++){
-          var stf2 = sg.staff[si2];
-          var sc = stf2.pct>=100?'var(--green)':stf2.pct>=80?'var(--gold)':'var(--red)';
-          html += '<tr>';
-          html += '<td style="text-align:left;font-weight:700;">'+stf2.name+'</td>';
-          html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(stf2.sales)+'</td>';
-          html += '<td style="color:var(--blue);">'+(stf2.target>0?dFmtYen(stf2.target):'未設定')+'</td>';
-          html += '<td style="color:'+(stf2.diff!==null?(stf2.diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(stf2.diff!==null?(stf2.diff>=0?'+':'')+dFmtYen(stf2.diff):'--')+'</td>';
-          html += '<td style="color:'+(stf2.target>0?sc:'var(--muted)')+';font-weight:700;">'+(stf2.target>0?stf2.pct+'%':'--')+'</td>';
-          html += '<td>'+(stf2.landing>0?dFmtYen(stf2.landing):'--')+'</td>';
-          html += '<td>'+dFmtNum(stf2.total)+'人</td>';
-          html += '</tr>';
-        }
-        html += '</table></div>';
-      } else {
-        html += '<p style="color:var(--muted);font-size:11px;">スタッフ未登録（目標設定タブで店舗を設定してください）</p>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-  }
-
-  // スタッフ別テーブル
-  html += '<div class="card">';
-  html += '<div class="card-head"><div class="card-icon gold">👤</div><div><div class="card-title">スタッフ別 当月進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月</div></div></div>';
-  html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:760px;"><tr><th>担当</th><th>売上実績</th><th>売上目標</th><th>差異</th><th>達成率</th><th>着地見込み</th><th>新規</th><th>既存</th><th>総客数</th></tr>';
-
-  var totalSales=0,totalTarget=0,totalLanding=0,totalNC=0,totalRC=0,totalTC=0;
-  for(var i=0;i<d.staff.length;i++){
-    var stf=d.staff[i];
-    var pct = stf.target>0?Math.round(stf.sales/stf.target*1000)/10:0;
-    var diff = stf.target>0?stf.sales-stf.target:null;
-    totalSales+=stf.sales; totalTarget+=stf.target; totalLanding+=stf.landing;
-    totalNC+=stf.newCount; totalRC+=stf.retCount; totalTC+=stf.total;
-
-    html += '<tr><td style="text-align:left;font-weight:700;">'+stf.name+'</td>';
-    html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(stf.sales)+'</td>';
-    html += '<td style="color:var(--blue);">'+(stf.target>0?dFmtYen(stf.target):'未設定')+'</td>';
-    html += '<td style="color:'+(diff!==null?(diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(diff!==null?(diff>=0?'+':'')+dFmtYen(diff):'--')+'</td>';
-    html += '<td class="pct-cell" style="color:'+(stf.target>0?dPctColor(pct):'var(--muted)')+';">'+(stf.target>0?pct+'%':'--')+'</td>';
-    html += '<td>'+(stf.landing>0?dFmtYen(stf.landing):'--')+'</td>';
-    html += '<td>'+dFmtNum(stf.newCount)+'人</td><td>'+dFmtNum(stf.retCount)+'人</td><td style="font-weight:700;">'+dFmtNum(stf.total)+'人</td></tr>';
-  }
-
-  var totPct = totalTarget>0?Math.round(totalSales/totalTarget*1000)/10:0;
-  var totDiff = totalTarget>0?totalSales-totalTarget:null;
-  html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
-  html += '<td style="text-align:left;">合計</td>';
-  html += '<td style="color:var(--gold2);">'+dFmtYen(totalSales)+'</td>';
-  html += '<td style="color:var(--blue);">'+(totalTarget>0?dFmtYen(totalTarget):'--')+'</td>';
-  html += '<td style="color:'+(totDiff!==null?(totDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(totDiff!==null?(totDiff>=0?'+':'')+dFmtYen(totDiff):'--')+'</td>';
-  html += '<td style="color:'+(totalTarget>0?dPctColor(totPct):'var(--muted)')+';">'+(totalTarget>0?totPct+'%':'--')+'</td>';
-  html += '<td>'+(totalLanding>0?dFmtYen(totalLanding):'--')+'</td>';
-  html += '<td>'+dFmtNum(totalNC)+'人</td><td>'+dFmtNum(totalRC)+'人</td><td>'+dFmtNum(totalTC)+'人</td></tr>';
-  html += '</table></div></div>';
 
   // 年間推移テーブル
   html += '<div class="card">';
