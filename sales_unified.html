@@ -490,7 +490,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbwjrHq2cdpDeJVAjhT8ZRtS3kTX5Qf1dqBTBQNFlFdDatFra_UrQhUr5r4pScL4v6gmmA/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyp2XkHFX-HSiOfnFWWZKCIcD6k6vq9IRH6arkZh_wVBHcB-AOhXh4WCzzjbjt3JKpBFw/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -679,9 +679,12 @@ function loadHistory(){
   document.body.appendChild(script);
 }
 
+var histRowsCache = [];
+
 function renderHistory(json){
   var contEl = document.getElementById('hist-content');
   var rows = json.rows || [];
+  histRowsCache = rows;
 
   if(!rows.length){
     contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">'+
@@ -690,13 +693,13 @@ function renderHistory(json){
   }
 
   var totalSales=0, totalCnt=0;
-  var html = '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:560px;">';
-  html += '<tr><th>日付</th><th>新規技術</th><th>新規店販</th><th>既存技術</th><th>既存店販</th><th>売上合計</th><th>客数</th></tr>';
+  var html = '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:620px;">';
+  html += '<tr><th>日付</th><th>新規技術</th><th>新規店販</th><th>既存技術</th><th>既存店販</th><th>売上合計</th><th>客数</th><th></th></tr>';
 
   for(var i=0;i<rows.length;i++){
     var r = rows[i];
     totalSales += r.sales; totalCnt += r.total;
-    html += '<tr>';
+    html += '<tr id="hist-row-'+i+'">';
     html += '<td>'+r.date+'（'+r.dow+'）</td>';
     html += '<td>'+fmtYen(r.newTech)+'</td>';
     html += '<td>'+fmtYen(r.newRetail)+'</td>';
@@ -704,13 +707,15 @@ function renderHistory(json){
     html += '<td>'+fmtYen(r.retRetail)+'</td>';
     html += '<td style="color:var(--gold2);font-weight:700;">'+fmtYen(r.sales)+'</td>';
     html += '<td>'+r.total+'人</td>';
+    html += '<td><button class="btn-rename" onclick="toggleHistEdit('+i+')" style="font-size:10px;padding:4px 10px;">編集</button></td>';
     html += '</tr>';
+    html += '<tr id="hist-edit-'+i+'" style="display:none;"><td colspan="8" style="padding:0;border:none;">'+buildHistEditForm(i,r)+'</td></tr>';
   }
 
   if(rows.length>1){
     html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
     html += '<td>合計（'+rows.length+'件）</td><td>--</td><td>--</td><td>--</td><td>--</td>';
-    html += '<td style="color:var(--gold2);">'+fmtYen(totalSales)+'</td><td>'+totalCnt+'人</td>';
+    html += '<td style="color:var(--gold2);">'+fmtYen(totalSales)+'</td><td>'+totalCnt+'人</td><td></td>';
     html += '</tr>';
   }
 
@@ -722,6 +727,91 @@ function renderHistory(json){
   }
 
   contEl.innerHTML = html;
+}
+
+// ── 履歴編集フォーム ──
+function buildHistEditForm(idx, r){
+  var html = '<div style="background:var(--card2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin:6px 0;">';
+  html += '<div style="font-size:10px;color:var(--gold);letter-spacing:1px;margin-bottom:10px;">'+r.date+'（'+r.dow+'）の入力を編集</div>';
+
+  html += '<div style="font-size:10px;color:var(--green);margin-bottom:6px;">🌱 新規客</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">';
+  html += '<input type="number" class="ti num no-spin" id="he-newTech-'+idx+'" value="'+r.newTech+'" placeholder="技術売上">';
+  html += '<input type="number" class="ti num no-spin" id="he-newRetail-'+idx+'" value="'+r.newRetail+'" placeholder="店販売上">';
+  html += '</div>';
+
+  html += '<div style="font-size:10px;color:var(--blue);margin-bottom:6px;">🔁 既存客</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">';
+  html += '<input type="number" class="ti num no-spin" id="he-retTech-'+idx+'" value="'+r.retTech+'" placeholder="技術売上">';
+  html += '<input type="number" class="ti num no-spin" id="he-retRetail-'+idx+'" value="'+r.retRetail+'" placeholder="店販売上">';
+  html += '</div>';
+
+  html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">客数</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">';
+  html += '<input type="number" class="ti num no-spin" id="he-newCount-'+idx+'" value="'+r.newCount+'" placeholder="新規客数">';
+  html += '<input type="number" class="ti num no-spin" id="he-retCount-'+idx+'" value="'+r.retCount+'" placeholder="既存客数">';
+  html += '</div>';
+
+  html += '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">メニュー人数</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">';
+  html += '<input type="number" class="ti num no-spin" id="he-cut-'+idx+'" value="'+r.cut+'" placeholder="カット">';
+  html += '<input type="number" class="ti num no-spin" id="he-color-'+idx+'" value="'+r.color+'" placeholder="カラー">';
+  html += '<input type="number" class="ti num no-spin" id="he-perm-'+idx+'" value="'+r.perm+'" placeholder="パーマ">';
+  html += '<input type="number" class="ti num no-spin" id="he-straight-'+idx+'" value="'+r.straight+'" placeholder="縮毛">';
+  html += '<input type="number" class="ti num no-spin" id="he-treat-'+idx+'" value="'+r.treat+'" placeholder="トリートメント">';
+  html += '<input type="number" class="ti num no-spin" id="he-spa-'+idx+'" value="'+r.spa+'" placeholder="ヘッドスパ">';
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html += '<button class="btn-rename" onclick="toggleHistEdit('+idx+')">キャンセル</button>';
+  html += '<button class="save-btn" onclick="saveHistEdit('+idx+')" style="padding:8px 16px;font-size:11px;">💾 保存</button>';
+  html += '</div>';
+  html += '<div id="he-msg-'+idx+'" style="display:none;margin-top:8px;font-size:11px;text-align:right;"></div>';
+  html += '</div>';
+  return html;
+}
+
+function toggleHistEdit(idx){
+  var row = document.getElementById('hist-edit-'+idx);
+  if(!row) return;
+  row.style.display = (row.style.display === 'none') ? 'table-row' : 'none';
+}
+
+async function saveHistEdit(idx){
+  var r = histRowsCache[idx];
+  if(!r) return;
+  var staffName = document.getElementById('f-staff').value.trim();
+  var msgEl = document.getElementById('he-msg-'+idx);
+
+  function v2(id){ var el=document.getElementById(id); return el?(parseInt(el.value)||0):0; }
+
+  var payload = {
+    isHistoryEdit: true,
+    rowNo: r.rowNo,
+    staff: staffName,
+    newTech:   v2('he-newTech-'+idx),
+    newRetail: v2('he-newRetail-'+idx),
+    retTech:   v2('he-retTech-'+idx),
+    retRetail: v2('he-retRetail-'+idx),
+    newCount:  v2('he-newCount-'+idx),
+    retCount:  v2('he-retCount-'+idx),
+    cut:       v2('he-cut-'+idx),
+    color:     v2('he-color-'+idx),
+    perm:      v2('he-perm-'+idx),
+    straight:  v2('he-straight-'+idx),
+    treat:     v2('he-treat-'+idx),
+    spa:       v2('he-spa-'+idx)
+  };
+
+  if(msgEl){ msgEl.style.display='block'; msgEl.style.color='var(--gold)'; msgEl.textContent='保存中...'; }
+
+  try{
+    await sendViaForm(payload, GAS_URL);
+    if(msgEl){ msgEl.style.color='var(--green)'; msgEl.textContent='✅ 保存しました'; }
+    setTimeout(function(){ loadHistory(); }, 1500);
+  }catch(e){
+    if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='❌ 保存に失敗しました'; }
+  }
 }
 
 function getTargets(){
