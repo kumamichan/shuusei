@@ -652,7 +652,7 @@ function loadHistory(){
     clearTimeout(window._histTimeout);
     contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得に失敗しました</p>';
   };
-  document.head.appendChild(script);
+  document.body.appendChild(script);
 }
 
 function renderHistory(json){
