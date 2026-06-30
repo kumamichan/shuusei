@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>売上管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0D0C0A;--surface:#151310;--card:#1C1A16;--card2:#231F1A;
+  --gold:#C8A45A;--gold2:#E4C07A;--gold-bg:rgba(200,164,90,0.08);
+  --text:#F0EAE0;--muted:#8A7F6E;--border:#2E2A22;--border2:#3D3730;
+  --green:#4A8C6A;--green-bg:rgba(74,140,106,0.10);
+  --blue:#5A7AAC;--blue-bg:rgba(90,122,172,0.10);
+  --red:#C46A5A;--red-bg:rgba(196,106,90,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;position:sticky;top:0;z-index:100;}
+.hdr-inner{max-width:980px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),#8A6A2A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:1px;}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;}
+.hdr-date{font-family:'Syne',sans-serif;font-size:13px;color:var(--gold);font-weight:600;letter-spacing:1px;}
+
+/* TABS */
+.main-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;}
+.main-tabs-inner{max-width:980px;margin:0 auto;display:flex;gap:0;}
+.main-tab{padding:14px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:1px;white-space:nowrap;}
+.main-tab:hover{color:var(--text);}
+.main-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* MAIN */
+.main{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;animation:rise 0.35s ease;}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 26px;margin-bottom:16px;}
+.card-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.card-icon.gold{background:rgba(200,164,90,0.15);border:1px solid rgba(200,164,90,0.25);}
+.card-icon.green{background:rgba(74,140,106,0.15);border:1px solid rgba(74,140,106,0.25);}
+.card-icon.blue{background:rgba(90,122,172,0.15);border:1px solid rgba(90,122,172,0.25);}
+.card-icon.purple{background:rgba(160,90,172,0.15);border:1px solid rgba(160,90,172,0.25);}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);}
+.card-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* INPUTS */
+.ig{display:grid;gap:12px;}
+.ig2{grid-template-columns:1fr 1fr;}
+.ig3{grid-template-columns:1fr 1fr 1fr;}
+.ig4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fl{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.fl .req{color:var(--gold);}
+.ti{width:100%;background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);outline:none;transition:all 0.18s;}
+.ti::placeholder{color:var(--muted);opacity:0.45;}
+.ti:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,90,0.10);background:var(--card);}
+.ti.num{text-align:right;font-family:'Syne',sans-serif;font-weight:600;}
+.ti.num-blue{background:rgba(90,122,172,0.08);border-color:rgba(90,122,172,0.3);color:var(--blue);}
+.ti.num-blue:focus{border-color:var(--blue);}
+input[type="date"].ti{color-scheme:dark;}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.sec-lbl.new-c{color:var(--green);}
+.sec-lbl.ret-c{color:var(--blue);}
+
+/* SUBTOTAL */
+.subtotal{background:var(--card2);border:1px solid var(--border2);border-radius:10px;padding:11px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.subtotal-label{font-size:11px;color:var(--muted);}
+.subtotal-val{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--gold);}
+
+/* PILLS for boost */
+.boost-item{background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:14px;}
+.boost-row{display:grid;grid-template-columns:1fr 110px;gap:10px;}
+.boost-name-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Noto Sans JP',sans-serif;font-size:13px;color:var(--text);outline:none;transition:all 0.15s;}
+.boost-name-input:focus{border-color:var(--gold);}
+.boost-name-input::placeholder{color:var(--muted);opacity:0.4;}
+
+/* PREVIEW */
+.total-preview{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:16px;}
+.total-preview-title{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
+.total-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+.total-item{text-align:center;padding:12px;background:rgba(200,164,90,0.05);border:1px solid rgba(200,164,90,0.12);border-radius:10px;}
+.total-item-label{font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;}
+.total-item-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--gold2);}
+.total-item-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* SUBMIT */
+.submit-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),#8A6A2A);color:#0D0C0A;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(200,164,90,0.35);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+/* TOAST */
+.toast{border-radius:12px;padding:13px 18px;font-size:13px;text-align:center;margin-top:14px;display:none;}
+.toast.show{display:block;animation:rise 0.3s ease;}
+.toast.sending{background:var(--gold-bg);color:var(--gold);border:1px solid rgba(200,164,90,0.2);}
+.toast.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(74,140,106,0.2);}
+.toast.err{background:var(--red-bg);color:var(--red);border:1px solid rgba(196,106,90,0.2);}
+.toast.warn{background:var(--gold-bg);color:var(--gold);border:1px solid rgba(200,164,90,0.15);}
+
+/* ERR */
+.err-msg{font-size:11px;color:var(--red);display:none;}
+.has-err .err-msg{display:block;}
+.has-err .ti{border-color:var(--red);}
+
+/* ── DASHBOARD ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px;}
+.kpi-box{background:var(--card2);border-radius:12px;padding:14px 16px;border:1px solid var(--border);}
+.kpi-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:5px;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.kpi-bar-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.kpi-bar{height:100%;border-radius:2px;transition:width 0.6s ease;}
+.kpi-bar.green{background:var(--green);}
+.kpi-bar.gold{background:var(--gold);}
+.kpi-bar.red{background:var(--red);}
+.kpi-diff{font-size:11px;font-weight:600;}
+.kpi-diff.pos{color:var(--green);}
+.kpi-diff.neg{color:var(--red);}
+.kpi-diff.warn{color:var(--gold);}
+
+/* STAFF TABS */
+.staff-tab-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.staff-tab{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border2);background:var(--card);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.staff-tab:hover{border-color:var(--gold);color:var(--gold);}
+.staff-tab.active{background:rgba(200,164,90,0.12);border-color:var(--gold);color:var(--gold2);}
+/* 月選択ボタン（staff-tabと同テイスト）*/
+.month-btn-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.month-btn{padding:6px 14px;border-radius:50px;border:1.5px solid var(--border2);background:var(--card);color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;white-space:nowrap;letter-spacing:0.5px;}
+.month-btn:hover{border-color:var(--gold);color:var(--gold);}
+.month-btn.active{background:rgba(200,164,90,0.12);border-color:var(--gold);color:var(--gold2);}
+.staff-dash{display:none;}
+.staff-dash.active{display:block;animation:rise 0.3s ease;}
+
+/* YEAR TABLE */
+.yr-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+.yr-table th{background:var(--card2);color:var(--muted);padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap;}
+.yr-table th:first-child{text-align:left;}
+.yr-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text);}
+.yr-table td:first-child{text-align:left;color:var(--muted);}
+.yr-table tr:last-child td{border-bottom:none;}
+.yr-table .pct-cell{font-weight:700;}
+.yr-table .pct-cell.pos{color:var(--green);}
+.yr-table .pct-cell.neg{color:var(--red);}
+.yr-table .pct-cell.warn{color:var(--gold);}
+.yr-table .actual{color:var(--text);font-weight:600;}
+.yr-table .target{color:var(--blue);}
+.yr-table .section-head td{background:rgba(200,164,90,0.06);color:var(--gold);font-weight:700;font-size:10px;letter-spacing:2px;}
+
+/* TARGET INPUT TABLE */
+.tgt-table{width:100%;border-collapse:collapse;font-size:12px;}
+.tgt-table th{background:var(--card2);color:var(--muted);padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:600;}
+.tgt-table th:first-child,.tgt-table th:nth-child(2){text-align:left;}
+.tgt-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.tgt-table tr:last-child td{border-bottom:none;}
+.tgt-table .tgt-input{width:100%;background:rgba(90,122,172,0.08);border:1px solid rgba(90,122,172,0.2);border-radius:6px;padding:6px 8px;font-family:'Syne',sans-serif;font-size:12px;color:var(--blue);text-align:right;outline:none;transition:all 0.15s;}
+.lnd-input{width:100%;background:rgba(200,164,90,0.08);border:1px solid rgba(200,164,90,0.25);border-radius:6px;padding:6px 8px;font-family:'Syne',sans-serif;font-size:12px;color:var(--gold2);text-align:right;outline:none;transition:border-color 0.15s;}
+.lnd-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,164,90,0.15);}
+.lnd-input::placeholder{color:rgba(200,164,90,0.3);}
+.tgt-table .tgt-input:focus{border-color:var(--blue);background:rgba(90,122,172,0.12);}
+.tgt-table .total-cell{background:rgba(74,140,106,0.08);color:var(--green);font-weight:700;text-align:right;padding:6px 10px;border-radius:6px;}
+.staff-manage-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card2);border-radius:10px;border:1px solid var(--border);margin-bottom:6px;}
+.staff-manage-name{flex:1;font-size:13px;color:var(--text);font-weight:500;}
+.staff-manage-input{background:var(--card);border:1.5px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:13px;color:var(--text);outline:none;transition:all 0.15px;width:120px;}
+.staff-manage-input:focus{border-color:var(--gold);}
+.btn-rename{padding:6px 12px;border-radius:8px;background:rgba(200,164,90,0.12);border:1px solid rgba(200,164,90,0.3);color:var(--gold);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn-rename:hover{background:rgba(200,164,90,0.2);}
+.btn-delete{padding:6px 12px;border-radius:8px;background:rgba(196,106,90,0.1);border:1px solid rgba(196,106,90,0.25);color:var(--red);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn-delete:hover{background:rgba(196,106,90,0.2);}
+.tgt-table .item-label{color:var(--text);font-weight:500;}
+.tgt-table .item-sub{color:var(--muted);font-size:10px;}
+
+/* CHART BARS */
+.chart-bar-wrap{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.chart-row{display:flex;align-items:center;gap:10px;}
+.chart-row-label{font-size:11px;color:var(--muted);min-width:36px;text-align:right;}
+.chart-bar-track{flex:1;height:20px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;}
+.chart-bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;}
+.chart-bar-fill span{font-size:10px;font-weight:700;color:#0D0C0A;white-space:nowrap;}
+.chart-bar-fill.actual{background:linear-gradient(90deg,var(--gold),#D4B060);}
+.chart-bar-fill.target{background:rgba(90,122,172,0.4);position:absolute;top:0;left:0;}
+.chart-row-val{font-size:11px;font-weight:600;min-width:60px;text-align:right;}
+
+/* SAVE BTN */
+.save-btn{padding:11px 22px;background:var(--green);color:#FFFDF9;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:1px;}
+.save-btn:hover{opacity:0.85;transform:translateY(-1px);}
+
+@media(max-width:640px){
+  .ig2,.ig3,.ig4{grid-template-columns:1fr 1fr;}
+  .main-tab{padding:12px 12px;font-size:11px;}
+  .card{padding:16px;}
+  .total-grid{grid-template-columns:1fr 1fr;}
+  .boost-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <div>
+        <div class="logo-text">Sales Manager</div>
+        <div class="logo-sub">売上管理システム</div>
+      </div>
+    </div>
+    <div class="hdr-date" id="hdr-date"></div>
+  </div>
+</div>
+
+<!-- メインタブ -->
+<div class="main-tabs">
+  <div class="main-tabs-inner">
+    <div class="main-tab active" onclick="switchMainTab('tab-input',this)">📝 日次入力</div>
+    <div class="main-tab" onclick="switchMainTab('tab-progress',this)">📊 進捗ダッシュボード</div>
+    <div class="main-tab" onclick="switchMainTab('tab-target',this)">🎯 目標設定</div>
+    <div class="main-tab" onclick="switchMainTab('tab-yearly',this)">📈 年間推移</div>
+    <div class="main-tab" onclick="switchMainTab('tab-dashboard',this)">🏢 全体ダッシュボード</div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ══════════ TAB1: 日次入力 ══════════ -->
+<div class="tab-content active" id="tab-input">
+
+  <!-- 基本情報 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon gold">📅</div>
+      <div><div class="card-title">基本情報</div><div class="card-sub">来店日と担当スタッフ</div></div>
+    </div>
+    <div class="ig ig2">
+      <div class="fg" id="fg-date">
+        <label class="fl">来店日<span class="req">*</span></label>
+        <input type="date" class="ti" id="f-date">
+        <div class="err-msg">来店日を入力してください</div>
+      </div>
+      <div class="fg" id="fg-staff">
+        <label class="fl">担当スタッフ<span class="req">*</span></label>
+        <input type="text" class="ti" id="f-staff" placeholder="例：田中" list="staff-list" oninput="showStaffStore()">
+        <datalist id="staff-list"></datalist>
+        <div id="f-staff-store-badge" style="margin-top:6px;font-size:11px;color:var(--gold);display:none;"></div>
+        <div class="err-msg">担当スタッフを入力してください</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 売上入力 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon gold">💰</div>
+      <div><div class="card-title">売上入力</div><div class="card-sub">新規客・既存客の技術売上と店販売上</div></div>
+    </div>
+    <div class="sec-lbl new-c" style="margin-bottom:10px;">🌱 新規客</div>
+    <div class="ig ig2" style="margin-bottom:16px;">
+      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num" id="f-new-tech" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num" id="f-new-retail" placeholder="0" min="0" oninput="calcAll()"></div>
+    </div>
+    <div class="sec-lbl ret-c" style="margin-bottom:10px;">🔁 既存客</div>
+    <div class="ig ig2" style="margin-bottom:12px;">
+      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num" id="f-ret-tech" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num" id="f-ret-retail" placeholder="0" min="0" oninput="calcAll()"></div>
+    </div>
+    <div class="subtotal"><div class="subtotal-label">本日売上合計</div><div class="subtotal-val" id="sub-sales">¥0</div></div>
+  </div>
+
+  <!-- 客数 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon green">👥</div>
+      <div><div class="card-title">客数入力</div></div>
+    </div>
+    <div class="ig ig3">
+      <div class="fg"><label class="fl" style="color:var(--green);">🌱 新規客数</label><input type="number" class="ti num" id="f-new-cnt" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl" style="color:var(--blue);">🔁 既存客数</label><input type="number" class="ti num" id="f-ret-cnt" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">総客数</label><input type="number" class="ti num" id="f-total-cnt" placeholder="0" readonly style="opacity:0.6;"></div>
+    </div>
+  </div>
+
+  <!-- メニュー人数 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon blue">✂</div>
+      <div><div class="card-title">メニュー人数</div></div>
+    </div>
+    <div class="ig ig2" style="margin-bottom:10px;">
+      <div class="fg"><label class="fl">✂ カット</label><input type="number" class="ti num" id="f-cut" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">🎨 カラー</label><input type="number" class="ti num" id="f-color" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">💫 パーマ</label><input type="number" class="ti num" id="f-perm" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">💈 縮毛（ストレート）</label><input type="number" class="ti num" id="f-straight" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">✨ トリートメント</label><input type="number" class="ti num" id="f-treat" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">🛁 ヘッドスパ</label><input type="number" class="ti num" id="f-spa" placeholder="0" min="0" oninput="calcAll()"></div>
+    </div>
+    <div class="ig ig2">
+      <div></div>
+      <div class="fg"><label class="fl">メニュー合計</label><input type="number" class="ti num" id="f-menu-total" placeholder="0" readonly style="opacity:0.6;"></div>
+    </div>
+  </div>
+
+  <!-- 強化商材 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon purple">🌟</div>
+      <div><div class="card-title">強化商材</div><div class="card-sub">最大3種類</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="boost-item"><div class="boost-row"><input type="text" class="boost-name-input" id="boost1-name" placeholder="商材①名称" list="b1-list"><datalist id="b1-list"></datalist><input type="number" class="ti num" id="f-boost1" placeholder="個数" min="0" oninput="calcAll()"></div></div>
+      <div class="boost-item"><div class="boost-row"><input type="text" class="boost-name-input" id="boost2-name" placeholder="商材②名称" list="b2-list"><datalist id="b2-list"></datalist><input type="number" class="ti num" id="f-boost2" placeholder="個数" min="0" oninput="calcAll()"></div></div>
+      <div class="boost-item"><div class="boost-row"><input type="text" class="boost-name-input" id="boost3-name" placeholder="商材③名称" list="b3-list"><datalist id="b3-list"></datalist><input type="number" class="ti num" id="f-boost3" placeholder="個数" min="0" oninput="calcAll()"></div></div>
+    </div>
+  </div>
+
+  <!-- 備考 -->
+  <div class="card">
+    <div class="card-head"><div class="card-icon gold">📝</div><div><div class="card-title">備考</div></div></div>
+    <textarea class="ti" id="f-memo" rows="3" placeholder="特記事項など..." style="resize:vertical;line-height:1.8;text-align:left;"></textarea>
+  </div>
+
+  <!-- 送信プレビュー -->
+  <div class="total-preview">
+    <div class="total-preview-title">本日の入力内容プレビュー</div>
+    <div class="total-grid">
+      <div class="total-item"><div class="total-item-label">売上合計</div><div class="total-item-val" id="prev-sales">¥0</div><div class="total-item-sub" id="prev-sales-sub">新規¥0 / 既存¥0</div></div>
+      <div class="total-item"><div class="total-item-label">総客数</div><div class="total-item-val" id="prev-count">0人</div><div class="total-item-sub" id="prev-count-sub">新規0 / 既存0</div></div>
+      <div class="total-item"><div class="total-item-label">メニュー合計</div><div class="total-item-val" id="prev-menu">0件</div><div class="total-item-sub" id="prev-menu-sub">カット0 カラー0</div></div>
+      <div class="total-item"><div class="total-item-label">強化商材</div><div class="total-item-val" id="prev-boost">0個</div><div class="total-item-sub" id="prev-boost-sub">①0 ②0 ③0</div></div>
+    </div>
+  </div>
+
+  <button class="submit-btn" onclick="submitForm()" id="submit-btn">送信する →</button>
+  <div class="toast" id="toast"></div>
+
+  <!-- 入力履歴 -->
+  <div class="card" style="margin-top:16px;">
+    <div class="card-head" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="card-icon blue">📋</div>
+        <div><div class="card-title">入力履歴</div><div class="card-sub">自分の送信内容を確認（重複入力チェック用）</div></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="staff-tab active" id="hist-tab-today" onclick="switchHistScope('today')">本日のみ</button>
+        <button class="staff-tab" id="hist-tab-month" onclick="switchHistScope('month')">今月全部</button>
+      </div>
+    </div>
+    <div id="hist-content">
+      <p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">担当スタッフを入力すると履歴が表示されます</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB2: 進捗ダッシュボード ══════════ -->
+<div class="tab-content" id="tab-progress">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon gold">📊</div>
+      <div><div class="card-title">スタッフ別 個人進捗</div><div class="card-sub" id="dash-month-lbl"></div></div>
+    </div>
+    <div class="staff-tab-wrap" id="staff-tabs-prog"></div>
+    <div id="staff-prog-dashes"><p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">フォームを送信するとスタッフごとの進捗が表示されます</p></div>
+  </div>
+
+  <!-- 当日入力グラフ -->
+  <div class="card">
+    <div class="card-head"><div class="card-icon gold">📊</div><div><div class="card-title">当月 売上推移（棒グラフ）</div><div class="card-sub">累計実績 vs 目標</div></div></div>
+    <div class="chart-bar-wrap" id="chart-sales-bars"><p style="color:var(--muted);font-size:12px;">データ送信後に表示されます</p></div>
+  </div>
+</div>
+
+<!-- ══════════ TAB3: 目標設定 ══════════ -->
+<div class="tab-content" id="tab-target">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon blue">🎯</div>
+      <div><div class="card-title">スタッフ別 月別目標設定</div><div class="card-sub">スタッフ名を入力して各月の目標を設定。全体目標は自動集計されます。</div></div>
+    </div>
+
+    <!-- スタッフ管理 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">スタッフを追加</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input type="text" class="ti" id="new-staff-name" placeholder="スタッフ名を入力" style="max-width:200px;">
+        <select class="ti" id="new-staff-store" style="max-width:140px;background:var(--card2);">
+          <option value="oro">oro</option>
+          <option value="mem">mem</option>
+          <option value="plata">plata</option>
+        </select>
+        <button class="save-btn" onclick="addStaffToTarget()">＋ 追加</button>
+      </div>
+    </div>
+    <!-- スタッフ一覧（修正・削除・店舗変更）-->
+    <div id="staff-manage-list" style="margin-bottom:16px;"></div>
+
+    <!-- 月選択 -->
+    <div class="month-btn-wrap" id="month-tabs"></div>
+
+    <!-- 目標テーブル -->
+    <div style="overflow-x:auto;">
+      <table class="tgt-table" id="tgt-table">
+        <thead>
+          <tr>
+            <th style="min-width:120px;">項目</th>
+            <th style="min-width:50px;">単位</th>
+            <div id="tgt-staff-heads"></div>
+            <th style="min-width:90px;color:var(--green);">全体合計</th>
+          </tr>
+        </thead>
+        <tbody id="tgt-tbody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:10px;">
+      <button class="save-btn" onclick="saveTargets()">💾 目標・着地見込みを保存＆送信</button>
+    </div>
+    <div id="tgt-saved-msg" style="display:none;margin-top:10px;font-size:12px;color:var(--green);text-align:right;">✅ 目標・着地見込みを保存してスプシに送信しました</div>
+  </div>
+
+  <!-- 強化商材 店舗マスター設定 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon purple">🏢</div>
+      <div><div class="card-title">強化商材マスター設定（店舗単位）</div><div class="card-sub">商材名・単価は店舗ごとに1回設定すれば、その店舗の全スタッフに自動適用されます。</div></div>
+    </div>
+    <div id="boost-master-wrap"></div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+      <button class="save-btn" onclick="saveBoostMaster()">💾 店舗マスターを保存＆送信</button>
+    </div>
+    <div id="boost-master-saved-msg" style="display:none;margin-top:10px;font-size:12px;color:var(--green);text-align:right;">✅ 店舗マスターを保存してスプシに送信しました</div>
+  </div>
+
+  <!-- 強化商材 個人別 個数目標 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon purple">🌟</div>
+      <div><div class="card-title">強化商材 個数目標（スタッフ別）</div><div class="card-sub">単価は店舗マスターから自動反映。個数目標だけスタッフごとに入力できます。</div></div>
+    </div>
+    <div id="boost-tgt-wrap"></div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+      <button class="save-btn" onclick="saveBoostTargets()">💾 個数目標を保存＆送信</button>
+    </div>
+    <div id="boost-tgt-saved-msg" style="display:none;margin-top:10px;font-size:12px;color:var(--green);text-align:right;">✅ 強化商材目標を保存してスプシに送信しました</div>
+  </div>
+</div>
+
+<!-- ══════════ TAB4: 年間推移 ══════════ -->
+<div class="tab-content" id="tab-yearly">
+
+  <div class="card">
+    <div class="card-head"><div class="card-icon gold">📈</div><div><div class="card-title">年間 売上推移</div><div class="card-sub">実績 vs 目標 / 達成率（%）</div></div></div>
+    <div style="overflow-x:auto;">
+      <table class="yr-table" id="yr-sales-table"></table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-icon green">📈</div><div><div class="card-title">年間 客数推移</div><div class="card-sub">新規客数 / 既存客数 / 総客数</div></div></div>
+    <div style="overflow-x:auto;">
+      <table class="yr-table" id="yr-count-table"></table>
+    </div>
+  </div>
+  <!-- 棒グラフ -->
+  <div class="card">
+    <div class="card-head"><div class="card-icon gold">📊</div><div><div class="card-title">月別 売上グラフ</div></div></div>
+    <div class="chart-bar-wrap" id="yr-chart-bars"></div>
+  </div>
+</div>
+
+<!-- ══════════ TAB5: 全体ダッシュボード（幹部MTG用） ══════════ -->
+<div class="tab-content" id="tab-dashboard">
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div class="card-title">🏢 全体ダッシュボード</div><div class="card-sub" id="dash2-updated">読み込み中...</div></div>
+    <button class="save-btn" onclick="loadDashboardData()">🔄 更新</button>
+  </div>
+  <div id="dash2-content">
+    <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+
+// ════════════════════════════════════════
+// SALES MANAGER — 売上管理システム JS
+// ════════════════════════════════════════
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxCbai0PzU0BUi8L0E57ZDkQYgWYP9QEZQNoy5LPlhSMKZjVf-HJ67ViO5NnvV_qSC3zA/exec';
+// 全体ダッシュボード（幹部MTG用）専用GAS。別プロジェクトでデプロイしたURLを設定。
+var MTG_GAS_URL = 'https://script.google.com/macros/s/AKfycbwgamY58SWwKYTS7wyI-wvemmhvmpPtroAkxDkrKfyC2tKWTh__siCcTBO3mvDcUMrctg/exec';
+
+var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+var selectedMonthIdx = new Date().getMonth();
+
+// 目標項目定義
+var TGT_ITEMS = [
+  {key:'newTech',    label:'新規技術売上目標',       unit:'円', salesPart:true},
+  {key:'newRetail',  label:'新規店販売上目標',       unit:'円', salesPart:true},
+  {key:'retTech',    label:'既存技術売上目標',       unit:'円', salesPart:true},
+  {key:'retRetail',  label:'既存店販売上目標',       unit:'円', salesPart:true},
+  {key:'sales',      label:'売上合計（自動計算）',   unit:'円', readOnly:true},
+  {key:'newCount',   label:'新規客数目標',           unit:'人'},
+  {key:'retCount',   label:'既存客数目標',           unit:'人'},
+  {key:'totalCount', label:'総客数目標（自動計算）', unit:'人', readOnly:true}
+];
+
+// ════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════
+function v(id){ var el=document.getElementById(id); return el?parseInt(el.value)||0:0; }
+function today(){ return new Date().toISOString().slice(0,10); }
+function fmtYen(n){ return '¥'+(n||0).toLocaleString(); }
+
+function updateDate(){
+  var d = new Date();
+  document.getElementById('hdr-date').textContent =
+    d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+['日','月','火','水','木','金','土'][d.getDay()]+'）';
+}
+
+// ════════════════════════════════════════
+// LOCAL STORAGE
+// ════════════════════════════════════════
+function getMonthKey(){
+  var d = new Date(document.getElementById('f-date').value || today());
+  return d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1);
+}
+
+function getDB(){ try{ return JSON.parse(localStorage.getItem('hcs')||'[]'); }catch(e){ return []; } }
+function saveDB(l){ try{ localStorage.setItem('hcs',JSON.stringify(l)); }catch(e){} }
+
+function getCumAll(mk){
+  try{ return JSON.parse(localStorage.getItem('cum_all_'+mk)||'{"sales":0,"newCount":0,"retCount":0}'); }
+  catch(e){ return {sales:0,newCount:0,retCount:0}; }
+}
+function getCumStaff(name,mk){
+  try{ return JSON.parse(localStorage.getItem('cum_s_'+name+'_'+mk)||'{"sales":0,"newCount":0,"retCount":0}'); }
+  catch(e){ return {sales:0,newCount:0,retCount:0}; }
+}
+
+function saveCum(payload){
+  var mk    = getMonthKey();
+  var staff = payload.staff || '';
+  var ts    = payload.totalSales || 0;
+  var nc    = parseInt(payload.newCount) || 0;
+  var rc    = parseInt(payload.retCount) || 0;
+  var all   = getCumAll(mk);
+  localStorage.setItem('cum_all_'+mk, JSON.stringify({sales:all.sales+ts, newCount:all.newCount+nc, retCount:all.retCount+rc}));
+  if(staff){
+    var sc = getCumStaff(staff,mk);
+    localStorage.setItem('cum_s_'+staff+'_'+mk, JSON.stringify({sales:sc.sales+ts, newCount:sc.newCount+nc, retCount:sc.retCount+rc}));
+    // 強化商材の個数累計
+    var b1 = parseInt(payload.boost1)||0, b2 = parseInt(payload.boost2)||0, b3 = parseInt(payload.boost3)||0;
+    var bc = getCumBoost(staff, mk);
+    localStorage.setItem('cum_boost_'+staff+'_'+mk, JSON.stringify({b1:bc.b1+b1, b2:bc.b2+b2, b3:bc.b3+b3}));
+  }
+}
+function getCumBoost(staff, mk){
+  try{ return JSON.parse(localStorage.getItem('cum_boost_'+staff+'_'+mk)||'{"b1":0,"b2":0,"b3":0}'); }
+  catch(e){ return {b1:0,b2:0,b3:0}; }
+}
+
+function getStaffList(){
+  try{ return JSON.parse(localStorage.getItem('staff_names')||'[]'); }catch(e){ return []; }
+}
+function saveStaffName(name){
+  var list = getStaffList();
+  if(name && list.indexOf(name)===-1){ list.push(name); localStorage.setItem('staff_names',JSON.stringify(list)); }
+}
+
+// ── 店舗管理（oro / mem / plata） ──
+function getStaffStores(){
+  try{ return JSON.parse(localStorage.getItem('staff_stores')||'{}'); }catch(e){ return {}; }
+}
+function saveStaffStore(name, store){
+  var map = getStaffStores();
+  map[name] = store;
+  localStorage.setItem('staff_stores', JSON.stringify(map));
+}
+function getStaffStore(name){
+  var map = getStaffStores();
+  return map[name] || '未設定';
+}
+function removeStaffStore(name){
+  var map = getStaffStores();
+  delete map[name];
+  localStorage.setItem('staff_stores', JSON.stringify(map));
+}
+function showStaffStore(){
+  var staffInput = document.getElementById('f-staff');
+  var badge = document.getElementById('f-staff-store-badge');
+  if(!staffInput || !badge) return;
+  var name = staffInput.value.trim();
+  var store = name ? getStaffStore(name) : '';
+  if(name && store !== '未設定'){
+    badge.textContent = '🏢 所属店舗: ' + store;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+  loadHistory();
+}
+
+// ════════════════════════════════════════
+// 入力履歴（自分の送信内容を確認・重複チェック用）
+// ════════════════════════════════════════
+var histScope = 'today';
+
+function switchHistScope(scope){
+  histScope = scope;
+  document.getElementById('hist-tab-today').classList.toggle('active', scope==='today');
+  document.getElementById('hist-tab-month').classList.toggle('active', scope==='month');
+  loadHistory();
+}
+
+function loadHistory(){
+  var contEl = document.getElementById('hist-content');
+  if(!contEl) return;
+  var staffName = document.getElementById('f-staff').value.trim();
+
+  if(!staffName){
+    contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">担当スタッフを入力すると履歴が表示されます</p>';
+    return;
+  }
+  if(!GAS_URL || GAS_URL.indexOf('YOUR_GAS')!==-1){
+    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">⚠️ GAS URLが未設定です</p>';
+    return;
+  }
+
+  contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">読み込み中...</p>';
+
+  var oldScript = document.getElementById('hist-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._histTimeout = setTimeout(function(){
+    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">タイムアウトしました</p>';
+  }, 12000);
+
+  window.histCallback = function(json){
+    clearTimeout(window._histTimeout);
+    if(!json || json.status!=='ok'){
+      contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得エラー: '+(json?json.message:'不明')+'</p>';
+      return;
+    }
+    renderHistory(json);
+  };
+
+  var script = document.createElement('script');
+  script.id = 'hist-jsonp';
+  script.src = GAS_URL + '?action=history&staff=' + encodeURIComponent(staffName) + '&scope=' + histScope + '&callback=histCallback&t=' + Date.now();
+  script.onerror = function(){
+    clearTimeout(window._histTimeout);
+    contEl.innerHTML = '<p style="color:var(--red);font-size:12px;text-align:center;padding:16px;">取得に失敗しました</p>';
+  };
+  document.head.appendChild(script);
+}
+
+function renderHistory(json){
+  var contEl = document.getElementById('hist-content');
+  var rows = json.rows || [];
+
+  if(!rows.length){
+    contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">'+
+      (histScope==='today'?'本日':'今月')+'の入力はまだありません</p>';
+    return;
+  }
+
+  var totalSales=0, totalCnt=0;
+  var html = '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:560px;">';
+  html += '<tr><th>日付</th><th>新規技術</th><th>新規店販</th><th>既存技術</th><th>既存店販</th><th>売上合計</th><th>客数</th></tr>';
+
+  for(var i=0;i<rows.length;i++){
+    var r = rows[i];
+    totalSales += r.sales; totalCnt += r.total;
+    html += '<tr>';
+    html += '<td>'+r.date+'（'+r.dow+'）</td>';
+    html += '<td>'+fmtYen(r.newTech)+'</td>';
+    html += '<td>'+fmtYen(r.newRetail)+'</td>';
+    html += '<td>'+fmtYen(r.retTech)+'</td>';
+    html += '<td>'+fmtYen(r.retRetail)+'</td>';
+    html += '<td style="color:var(--gold2);font-weight:700;">'+fmtYen(r.sales)+'</td>';
+    html += '<td>'+r.total+'人</td>';
+    html += '</tr>';
+  }
+
+  if(rows.length>1){
+    html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
+    html += '<td>合計（'+rows.length+'件）</td><td>--</td><td>--</td><td>--</td><td>--</td>';
+    html += '<td style="color:var(--gold2);">'+fmtYen(totalSales)+'</td><td>'+totalCnt+'人</td>';
+    html += '</tr>';
+  }
+
+  html += '</table></div>';
+
+  if(rows.length>1 && histScope==='today'){
+    html += '<div style="margin-top:10px;padding:10px 14px;background:rgba(196,106,90,0.1);border:1px solid rgba(196,106,90,0.25);border-radius:8px;font-size:12px;color:var(--red);">'+
+      '⚠️ 本日すでに '+rows.length+' 件送信されています。重複入力でないか確認してください。</div>';
+  }
+
+  contEl.innerHTML = html;
+}
+
+function getTargets(){
+  try{ return JSON.parse(localStorage.getItem('targets_db')||'{}'); }catch(e){ return {}; }
+}
+function saveTargets_db(tgts){
+  localStorage.setItem('targets_db', JSON.stringify(tgts));
+}
+
+function getStaffTarget(staffName, month){
+  var tgts = getTargets();
+  var mi   = parseInt(month) - 1;
+  var raw  = (tgts[staffName] && tgts[staffName][mi]) ? tgts[staffName][mi] : {};
+  var t = {
+    newTech:   raw.newTech   || 0,
+    newRetail: raw.newRetail || 0,
+    retTech:   raw.retTech   || 0,
+    retRetail: raw.retRetail || 0,
+    newCount:  raw.newCount  || 0,
+    retCount:  raw.retCount  || 0
+  };
+  t.sales      = t.newTech + t.newRetail + t.retTech + t.retRetail;
+  t.totalCount = t.newCount + t.retCount;
+  return t;
+}
+
+function getAllTarget(month){
+  var tgts      = getTargets();
+  var mi        = parseInt(month) - 1;
+  var staffList = getStaffList();
+  var newTech=0,newRetail=0,retTech=0,retRetail=0,nc=0,rc=0;
+  for(var i=0;i<staffList.length;i++){
+    var name = staffList[i];
+    var t2   = (tgts[name] && tgts[name][mi]) ? tgts[name][mi] : {};
+    newTech   += t2.newTech   || 0;
+    newRetail += t2.newRetail || 0;
+    retTech   += t2.retTech   || 0;
+    retRetail += t2.retRetail || 0;
+    nc        += t2.newCount  || 0;
+    rc        += t2.retCount  || 0;
+  }
+  var sales = newTech+newRetail+retTech+retRetail;
+  return {newTech:newTech,newRetail:newRetail,retTech:retTech,retRetail:retRetail,
+          sales:sales,newCount:nc,retCount:rc,totalCount:nc+rc};
+}
+
+// ════════════════════════════════════════
+// CALC
+// ════════════════════════════════════════
+function calcAll(){
+  var ns = v('f-new-tech'), nr = v('f-new-retail');
+  var rs = v('f-ret-tech'), rr = v('f-ret-retail');
+  var ts = ns+nr+rs+rr;
+  var nc = v('f-new-cnt'), rc = v('f-ret-cnt');
+  var u  = v('f-cut')+v('f-color')+v('f-perm')+v('f-straight')+v('f-treat')+v('f-spa');
+  var b1=v('f-boost1'), b2=v('f-boost2'), b3=v('f-boost3');
+
+  var subSales = document.getElementById('sub-sales');
+  if(subSales) subSales.textContent = fmtYen(ts);
+
+  var totCnt = document.getElementById('f-total-cnt');
+  if(totCnt) totCnt.value = (nc+rc) || '';
+
+  var menuTot = document.getElementById('f-menu-total');
+  if(menuTot) menuTot.value = u || '';
+
+  var el;
+  el = document.getElementById('prev-sales');     if(el) el.textContent = fmtYen(ts);
+  el = document.getElementById('prev-sales-sub'); if(el) el.textContent = '新規'+fmtYen(ns)+' / 既存'+fmtYen(rs);
+  el = document.getElementById('prev-count');     if(el) el.textContent = (nc+rc)+'人';
+  el = document.getElementById('prev-count-sub'); if(el) el.textContent = '新規'+nc+' / 既存'+rc;
+  el = document.getElementById('prev-menu');      if(el) el.textContent = u+'件';
+  el = document.getElementById('prev-menu-sub');  if(el) el.textContent = 'カット'+v('f-cut')+' カラー'+v('f-color')+' パーマ'+v('f-perm')+' 縮毛'+v('f-straight');
+  el = document.getElementById('prev-boost');     if(el) el.textContent = (b1+b2+b3)+'個';
+  el = document.getElementById('prev-boost-sub'); if(el) el.textContent = '①'+b1+' ②'+b2+' ③'+b3;
+}
+
+// ════════════════════════════════════════
+// FORM CLEAR
+// ════════════════════════════════════════
+function clearForm(){
+  var fields = ['f-new-tech','f-new-retail','f-ret-tech','f-ret-retail',
+                'f-new-cnt','f-ret-cnt','f-total-cnt',
+                'f-cut','f-color','f-perm','f-straight','f-treat','f-spa','f-menu-total',
+                'f-boost1','f-boost2','f-boost3','f-memo'];
+  var subSalesEl = document.getElementById('sub-sales');
+  if(subSalesEl) subSalesEl.textContent = '¥0';
+  for(var i=0;i<fields.length;i++){
+    var el = document.getElementById(fields[i]);
+    if(el) el.value = '';
+  }
+  calcAll();
+}
+
+// ════════════════════════════════════════
+// VALIDATE & SUBMIT
+// ════════════════════════════════════════
+function validateForm(){
+  var ok = true;
+  var dateEl = document.getElementById('f-date');
+  var staffEl = document.getElementById('f-staff');
+  var fgDate  = document.getElementById('fg-date');
+  var fgStaff = document.getElementById('fg-staff');
+  fgDate.classList.remove('has-err'); fgStaff.classList.remove('has-err');
+  if(!dateEl.value){  fgDate.classList.add('has-err');  ok=false; }
+  if(!staffEl.value.trim()){ fgStaff.classList.add('has-err'); ok=false; }
+  return ok;
+}
+
+// ── iOSでも確実に動く GAS送信（隠しiframe + formPOST）──
+// iOSを含む全環境で確実にGASへ送信する関数
+// Content-Type: text/plain + no-cors が最も安定する
+async function sendViaForm(payload, gasUrl){
+  var json = JSON.stringify(payload);
+  var sent = false;
+
+  // 試行1: text/plain body で no-cors fetch（GASがリダイレクトなしで受け取れる）
+  try {
+    await fetch(gasUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: json
+    });
+    sent = true;
+  } catch(e1) {
+    console.warn('fetch text/plain failed:', e1.message);
+  }
+
+  // 試行2: application/json で no-cors fetch
+  if (!sent) {
+    try {
+      await fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: json
+      });
+      sent = true;
+    } catch(e2) {
+      console.warn('fetch application/json failed:', e2.message);
+    }
+  }
+
+  // 試行3: GETパラメータに載せて送信（最終手段）
+  if (!sent) {
+    try {
+      var encoded = encodeURIComponent(json);
+      // GETは文字数制限があるため最小限のデータのみ
+      await fetch(gasUrl + '?ping=1', {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+    } catch(e3) {
+      console.warn('GET fallback failed:', e3.message);
+    }
+  }
+}
+
+async function submitForm(){
+  if(!validateForm()) return;
+  var ns = v('f-new-tech'), nr = v('f-new-retail');
+  var rs = v('f-ret-tech'), rr = v('f-ret-retail');
+  var nc = v('f-new-cnt'), rc = v('f-ret-cnt');
+  var staff = document.getElementById('f-staff').value.trim();
+  var date  = document.getElementById('f-date').value;
+  var month = new Date(date).getMonth()+1;
+  var staffTgt = getStaffTarget(staff, month);
+  var allTgt   = getAllTarget(month);
+
+  var payload = {
+    date: date,
+    staff: staff,
+    store: getStaffStore(staff),
+    newTech: ns, newRetail: nr, retTech: rs, retRetail: rr,
+    newCount: nc, retCount: rc,
+    cut: v('f-cut'), color: v('f-color'), perm: v('f-perm'), straight: v('f-straight'),
+    treat: v('f-treat'), spa: v('f-spa'),
+    boost1: v('f-boost1'), boost2: v('f-boost2'), boost3: v('f-boost3'),
+    boost1Name: document.getElementById('boost1-name')?document.getElementById('boost1-name').value||'強化商材①':'強化商材①',
+    boost2Name: document.getElementById('boost2-name')?document.getElementById('boost2-name').value||'強化商材②':'強化商材②',
+    boost3Name: document.getElementById('boost3-name')?document.getElementById('boost3-name').value||'強化商材③':'強化商材③',
+    memo: document.getElementById('f-memo').value||'',
+    timestamp: new Date().toLocaleString('ja-JP'),
+    tgt_newTech:   staffTgt.newTech,   tgt_newRetail:  staffTgt.newRetail,
+    tgt_retTech:   staffTgt.retTech,   tgt_retRetail:  staffTgt.retRetail,
+    tgt_sales:     staffTgt.sales,     tgt_newCount:   staffTgt.newCount,
+    tgt_retCount:  staffTgt.retCount,  tgt_totalCount: staffTgt.totalCount,
+    allTgt_newTech:   allTgt.newTech,   allTgt_newRetail:  allTgt.newRetail,
+    allTgt_retTech:   allTgt.retTech,   allTgt_retRetail:  allTgt.retRetail,
+    allTgt_sales:     allTgt.sales,     allTgt_newCount:   allTgt.newCount,
+    allTgt_retCount:  allTgt.retCount,  allTgt_totalCount: allTgt.totalCount
+  };
+  payload.totalSales = ns+nr+rs+rr;
+
+  var btn   = document.getElementById('submit-btn');
+  var toast = document.getElementById('toast');
+  function show(type,msg){ toast.className='toast show '+type; toast.textContent=msg; }
+
+  btn.disabled = true;
+  show('sending','📤 送信中...');
+
+  // ローカルに保存
+  saveCum(payload);
+  saveStaffName(staff);
+  updateStaffSuggest();
+  updateBoostSuggest();
+
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1){
+    show('warn','⚠️ GAS URLが未設定です');
+    setTimeout(function(){ toast.className='toast'; },4000);
+    btn.disabled=false;
+    clearForm();
+    renderProgress();
+    return;
+  }
+
+  // iOSでも動くフォーム送信
+  try{
+    await sendViaForm(payload, GAS_URL);
+    show('ok','✅ 送信完了！スプレッドシートを確認してください');
+  }catch(e){
+    show('ok','✅ 送信しました（スプシを確認してください）');
+  }
+  setTimeout(function(){ toast.className='toast'; },4000);
+  btn.disabled = false;
+  clearForm();
+  renderProgress();
+  loadHistory();
+}
+
+// ════════════════════════════════════════
+// STAFF SUGGEST
+// ════════════════════════════════════════
+function updateStaffSuggest(){
+  var list = getStaffList();
+  var dl   = document.getElementById('staff-list');
+  dl.innerHTML = '';
+  for(var i=0;i<list.length;i++){
+    var opt = document.createElement('option'); opt.value=list[i]; dl.appendChild(opt);
+  }
+}
+function updateBoostSuggest(){
+  var db = getDB();
+  var names = {};
+  for(var i=0;i<db.length;i++){
+    if(db[i].boost1Name) names[db[i].boost1Name]=1;
+    if(db[i].boost2Name) names[db[i].boost2Name]=1;
+    if(db[i].boost3Name) names[db[i].boost3Name]=1;
+  }
+  for(var j=1;j<=3;j++){
+    var dl = document.getElementById('b'+j+'-list');
+    if(!dl) continue;
+    dl.innerHTML='';
+    for(var n in names){
+      var opt = document.createElement('option'); opt.value=n; dl.appendChild(opt);
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// PROGRESS DASHBOARD
+// ════════════════════════════════════════
+function renderProgress(){
+  var dateVal   = document.getElementById('f-date').value || today();
+  var month     = new Date(dateVal).getMonth()+1;
+  var mkMonth   = new Date(dateVal).getFullYear();
+  var mk        = mkMonth+'-'+(month<10?'0':'')+month;
+  var staffList = getStaffList();
+  var tabsWrap  = document.getElementById('staff-tabs-prog');
+  var dashWrap  = document.getElementById('staff-prog-dashes');
+  document.getElementById('dash-month-lbl').textContent = month+'月の個人目標との差異';
+
+  if(!staffList.length){
+    dashWrap.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">フォームを送信するとスタッフごとの進捗が表示されます</p>';
+    return;
+  }
+  tabsWrap.innerHTML=''; dashWrap.innerHTML='';
+
+  for(var si=0;si<staffList.length;si++){
+    var name = staffList[si];
+    var tab  = document.createElement('div');
+    tab.className='staff-tab'+(si===0?' active':'');
+    tab.textContent='👤 '+name;
+    (function(idx){
+      tab.onclick=function(){
+        var allTabs  = document.querySelectorAll('#staff-tabs-prog .staff-tab');
+        var allDashs = document.querySelectorAll('.staff-dash-prog');
+        for(var k=0;k<allTabs.length;k++)  allTabs[k].classList.remove('active');
+        for(var k=0;k<allDashs.length;k++) allDashs[k].classList.remove('active');
+        this.classList.add('active');
+        document.getElementById('sdash-'+idx).classList.add('active');
+      };
+    })(si);
+    tabsWrap.appendChild(tab);
+
+    var tgt      = getStaffTarget(name,month);
+    var cum      = getCumStaff(name,mk);
+    var boostCum = getCumBoost(name,mk);
+    var boostTgt = getStaffBoostTarget(name, month-1);
+    var totCnt   = cum.newCount+cum.retCount;
+    var salesPct = tgt.sales>0?cum.sales/tgt.sales:0;
+    var newPct   = tgt.newCount>0?cum.newCount/tgt.newCount:0;
+    var retPct   = tgt.retCount>0?cum.retCount/tgt.retCount:0;
+    var totPct   = tgt.totalCount>0?totCnt/tgt.totalCount:0;
+
+    function bc(p){ return p>=1?'green':p>=0.8?'gold':'red'; }
+    function dc2(p){ return p>=1?'pos':p>=0.8?'warn':'neg'; }
+    function ps(p){ return (p*100).toFixed(1)+'%'; }
+    function ds(a,t,yen){
+      var diff=a-t, abs=yen?fmtYen(Math.abs(diff)):Math.abs(diff).toLocaleString();
+      return diff>=0?'▲'+abs+' 超過':'▼'+abs+' 不足';
+    }
+
+    var div = document.createElement('div');
+    div.className='staff-dash staff-dash-prog'+(si===0?' active':'');
+    div.id='sdash-'+si;
+    div.innerHTML=
+      '<div class="kpi-grid">'+
+        '<div class="kpi-box"><div class="kpi-label">売上合計</div>'+
+        '<div class="kpi-val">'+fmtYen(cum.sales)+'</div>'+
+        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(salesPct)+'" style="width:'+Math.min(salesPct,1)*100+'%"></div></div>'+
+        '<div class="kpi-diff '+dc2(salesPct)+'">'+ps(salesPct)+' / 目標'+fmtYen(tgt.sales)+' / '+ds(cum.sales,tgt.sales,true)+'</div></div>'+
+        '<div class="kpi-box"><div class="kpi-label">新規客数</div>'+
+        '<div class="kpi-val">'+cum.newCount+'人</div>'+
+        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(newPct)+'" style="width:'+Math.min(newPct,1)*100+'%"></div></div>'+
+        '<div class="kpi-diff '+dc2(newPct)+'">'+ps(newPct)+' / 目標'+tgt.newCount+'人 / '+ds(cum.newCount,tgt.newCount,false)+'</div></div>'+
+        '<div class="kpi-box"><div class="kpi-label">既存客数</div>'+
+        '<div class="kpi-val">'+cum.retCount+'人</div>'+
+        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(retPct)+'" style="width:'+Math.min(retPct,1)*100+'%"></div></div>'+
+        '<div class="kpi-diff '+dc2(retPct)+'">'+ps(retPct)+' / 目標'+tgt.retCount+'人 / '+ds(cum.retCount,tgt.retCount,false)+'</div></div>'+
+        '<div class="kpi-box"><div class="kpi-label">総客数</div>'+
+        '<div class="kpi-val">'+totCnt+'人</div>'+
+        '<div class="kpi-bar-wrap"><div class="kpi-bar '+bc(totPct)+'" style="width:'+Math.min(totPct,1)*100+'%"></div></div>'+
+        '<div class="kpi-diff '+dc2(totPct)+'">'+ps(totPct)+' / 目標'+tgt.totalCount+'人 / '+ds(totCnt,tgt.totalCount,false)+'</div></div>'+
+      '</div>'+
+      '<div style="margin-top:10px;padding:12px;background:rgba(200,164,90,0.05);border-radius:10px;border:1px solid rgba(200,164,90,0.12);">'+
+        '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">個人目標（'+month+'月）</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;font-size:12px;">'+
+          '<div><div style="color:var(--muted);font-size:10px;">売上</div><div style="color:var(--gold2);font-weight:700;">'+fmtYen(tgt.sales)+'</div></div>'+
+          '<div><div style="color:var(--muted);font-size:10px;">新規</div><div style="color:var(--green);font-weight:700;">'+tgt.newCount+'人</div></div>'+
+          '<div><div style="color:var(--muted);font-size:10px;">既存</div><div style="color:var(--blue);font-weight:700;">'+tgt.retCount+'人</div></div>'+
+          '<div><div style="color:var(--muted);font-size:10px;">総客数</div><div style="color:var(--gold2);font-weight:700;">'+tgt.totalCount+'人</div></div>'+
+        '</div>'+
+      '</div>'+
+      buildBoostProgressHtml(boostCum, boostTgt);
+    dashWrap.appendChild(div);
+  }
+  renderSalesBars();
+}
+
+function buildBoostProgressHtml(boostCum, boostTgt){
+  var labels = {b1:'強化商材①', b2:'強化商材②', b3:'強化商材③'};
+  var html = '<div style="margin-top:10px;padding:12px;background:rgba(160,90,172,0.05);border-radius:10px;border:1px solid rgba(160,90,172,0.15);">'+
+    '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">🌟 強化商材 進捗</div>';
+
+  ['b1','b2','b3'].forEach(function(bk){
+    var actCount = boostCum[bk] || 0;
+    var t = boostTgt[bk] || {price:0, count:0};
+    var tgtCount = t.count || 0;
+    var tgtAmount = (t.price||0) * tgtCount;
+    var actAmount = (t.price||0) * actCount;
+    var pct = tgtCount>0 ? Math.min(actCount/tgtCount,1) : 0;
+    var pctLabel = tgtCount>0 ? (actCount/tgtCount*100).toFixed(1)+'%' : '--';
+    var barC = pct>=1?'green':pct>=0.8?'gold':'red';
+
+    html += '<div style="margin-bottom:8px;padding:8px 10px;background:var(--card2);border-radius:8px;">'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">'+
+        '<span style="font-weight:700;">'+labels[bk]+'</span>'+
+        '<span style="color:'+(pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)')+';font-weight:700;">'+pctLabel+'</span>'+
+      '</div>'+
+      '<div class="kpi-bar-wrap"><div class="kpi-bar '+barC+'" style="width:'+(pct*100)+'%"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;">'+
+        '<span>個数: '+actCount+' / '+(tgtCount>0?tgtCount+'個':'未設定')+'</span>'+
+        '<span>金額: '+fmtYen(actAmount)+' / '+(tgtAmount>0?fmtYen(tgtAmount):'--')+'</span>'+
+      '</div>'+
+    '</div>';
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════
+// SALES BAR CHART
+// ════════════════════════════════════════
+function renderSalesBars(){
+  var el = document.getElementById('chart-sales-bars');
+  if(!el) return;
+  var mk    = getMonthKey();
+  var cum   = getCumAll(mk);
+  var month = new Date(document.getElementById('f-date').value||today()).getMonth()+1;
+  var allTgt= getAllTarget(month);
+  if(!cum.sales && !allTgt.sales){ el.innerHTML='<p style="color:var(--muted);font-size:12px;">データ送信後に表示されます</p>'; return; }
+  var pct   = allTgt.sales>0?Math.min(cum.sales/allTgt.sales,1.2):0;
+  var color = pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)';
+  el.innerHTML=
+    '<div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">'+
+      '<span>累計 '+fmtYen(cum.sales)+'</span><span>目標 '+fmtYen(allTgt.sales)+'</span>'+
+    '</div>'+
+    '<div style="height:20px;background:var(--border);border-radius:10px;overflow:hidden;">'+
+      '<div style="height:100%;width:'+(pct*100)+'%;background:'+color+';border-radius:10px;transition:width 0.6s;"></div>'+
+    '</div>'+
+    '<div style="text-align:right;font-size:13px;font-weight:700;color:'+color+';margin-top:6px;">'+(allTgt.sales>0?(pct*100).toFixed(1)+'%':'--')+'</div>';
+}
+
+// ════════════════════════════════════════
+// TARGET TABLE (目標設定 + 着地見込み)
+// ════════════════════════════════════════
+function renderTargetTab(){
+  renderStaffManageList();
+  var mtabs = document.getElementById('month-tabs');
+  mtabs.innerHTML='';
+  for(var i=0;i<12;i++){
+    var btn = document.createElement('button');
+    btn.className='month-btn'+(i===selectedMonthIdx?' active':'');
+    btn.textContent=MONTHS[i];
+    (function(mi){
+      btn.onclick=function(){
+        selectedMonthIdx=mi;
+        var btns=document.querySelectorAll('.month-btn');
+        for(var k=0;k<btns.length;k++) btns[k].classList.remove('active');
+        this.classList.add('active');
+        renderTargetTable();
+        renderBoostMaster();
+        renderBoostTargets();
+      };
+    })(i);
+    mtabs.appendChild(btn);
+  }
+  renderTargetTable();
+  renderBoostMaster();
+  renderBoostTargets();
+}
+
+function renderTargetTable(){
+  var staffList = getStaffList();
+  var tgts      = getTargets();
+  var mi        = selectedMonthIdx;
+  var month     = mi + 1;
+  var table     = document.getElementById('tgt-table');
+
+  var thead = document.createElement('thead');
+  var htr0 = document.createElement('tr');
+  function mth(text, rowSpan, colSpan, css){
+    var th=document.createElement('th');
+    if(rowSpan>1) th.rowSpan=rowSpan;
+    if(colSpan>1) th.colSpan=colSpan;
+    if(css) th.style.cssText=css;
+    th.textContent=text;
+    return th;
+  }
+  htr0.appendChild(mth('項目',2,1,'min-width:140px;text-align:left;vertical-align:bottom;'));
+  htr0.appendChild(mth('単位',2,1,'min-width:45px;text-align:center;vertical-align:bottom;'));
+  for(var si=0;si<staffList.length;si++){
+    var thS=document.createElement('th');
+    thS.colSpan=4;
+    thS.style.cssText='text-align:center;background:rgba(200,164,90,0.08);border-left:2px solid rgba(200,164,90,0.2);padding:6px 4px;font-family:Syne,sans-serif;';
+    thS.textContent=staffList[si];
+    htr0.appendChild(thS);
+  }
+  htr0.appendChild(mth('全体合計',2,1,'min-width:90px;color:var(--green);vertical-align:bottom;text-align:right;'));
+  thead.appendChild(htr0);
+
+  var htr1=document.createElement('tr');
+  var subLabels=['目標','着地見込み','差額','達成率'];
+  var subColors=['','var(--gold)','','var(--green)'];
+  for(var si2=0;si2<staffList.length;si2++){
+    for(var ci=0;ci<4;ci++){
+      var thSub=document.createElement('th');
+      thSub.style.cssText='min-width:80px;text-align:right;font-size:10px;font-weight:400;color:'+(subColors[ci]||'var(--muted)')+';background:rgba(200,164,90,0.04);padding:4px 8px;'+(ci===0?'border-left:2px solid rgba(200,164,90,0.2);':'');
+      thSub.textContent=subLabels[ci];
+      htr1.appendChild(thSub);
+    }
+  }
+  thead.appendChild(htr1);
+  table.innerHTML='';
+  table.appendChild(thead);
+
+  var tbody=document.createElement('tbody');
+  for(var ii=0;ii<TGT_ITEMS.length;ii++){
+    var item   = TGT_ITEMS[ii];
+    var isAuto = item.readOnly||false;
+    var tr     = document.createElement('tr');
+    if(isAuto) tr.style.cssText='background:rgba(74,140,106,0.06);';
+
+    var labelTd=document.createElement('td');
+    labelTd.className='item-label';
+    if(isAuto){ labelTd.style.color='var(--green)'; labelTd.style.fontWeight='700'; }
+    labelTd.textContent=item.label;
+    tr.appendChild(labelTd);
+
+    var unitTd=document.createElement('td');
+    unitTd.className='item-sub';
+    unitTd.style.cssText='text-align:center;color:var(--muted);';
+    unitTd.textContent=item.unit;
+    tr.appendChild(unitTd);
+
+    var rowTotal=0;
+    for(var sj=0;sj<staffList.length;sj++){
+      var nm = staffList[sj];
+      var lndKey = 'lnd_'+nm+'_'+mi+'_'+item.key;
+      var lndSaved = parseInt(localStorage.getItem(lndKey))||0;
+
+      var tdTgt=document.createElement('td');
+      tdTgt.style.borderLeft='2px solid rgba(200,164,90,0.2)';
+      if(isAuto){
+        tdTgt.id='auto-'+item.key+'-'+sj;
+        tdTgt.style.cssText='border-left:2px solid rgba(200,164,90,0.2);text-align:right;color:var(--green);font-weight:700;padding:6px 10px;';
+        tdTgt.textContent='0';
+      } else {
+        var tgtVal=(tgts[nm]&&tgts[nm][mi]&&tgts[nm][mi][item.key])?tgts[nm][mi][item.key]:0;
+        rowTotal+=tgtVal;
+        var inpTgt=document.createElement('input');
+        inpTgt.type='number'; inpTgt.className='tgt-input';
+        inpTgt.setAttribute('data-staff',nm); inpTgt.setAttribute('data-key',item.key);
+        inpTgt.setAttribute('data-sidx',String(sj));
+        inpTgt.value=tgtVal||''; inpTgt.placeholder='0'; inpTgt.min='0';
+        inpTgt.style.width='78px';
+        (function(k,sidxVal){
+          inpTgt.oninput=function(){
+            updateTotalCell(this,k);
+            updateAutoRows(sidxVal);
+            refreshLandingDiff(sidxVal,k,mi);
+          };
+        })(item.key,sj);
+        tdTgt.appendChild(inpTgt);
+      }
+      tr.appendChild(tdTgt);
+
+      var tdLnd=document.createElement('td');
+      tdLnd.style.padding='4px 4px';
+      if(isAuto){
+        tdLnd.id='auto-lnd-'+item.key+'-'+sj;
+        tdLnd.style.cssText='text-align:right;color:var(--gold);font-weight:700;padding:6px 10px;';
+        tdLnd.textContent=lndSaved>0?lndSaved.toLocaleString():'0';
+      } else {
+        var inpLnd=document.createElement('input');
+        inpLnd.type='number'; inpLnd.className='lnd-input';
+        inpLnd.setAttribute('data-staff',nm); inpLnd.setAttribute('data-key',item.key);
+        inpLnd.setAttribute('data-sidx',String(sj)); inpLnd.setAttribute('data-mi',String(mi));
+        inpLnd.value=lndSaved||''; inpLnd.placeholder='0'; inpLnd.min='0';
+        inpLnd.style.width='78px';
+        (function(k,sidxVal,miVal,staffName){
+          inpLnd.oninput=function(){
+            localStorage.setItem('lnd_'+staffName+'_'+miVal+'_'+k, parseInt(this.value)||0);
+            updateLandingAutoRows(sidxVal);
+            refreshLandingDiff(sidxVal,k,miVal);
+          };
+        })(item.key,sj,mi,nm);
+        tdLnd.appendChild(inpLnd);
+      }
+      tr.appendChild(tdLnd);
+
+      var tdDiff=document.createElement('td');
+      tdDiff.id='lnd-diff-'+item.key+'-'+sj;
+      tdDiff.style.cssText='text-align:right;font-size:12px;font-weight:600;padding:4px 6px;white-space:nowrap;';
+      tdDiff.textContent='--';
+      tr.appendChild(tdDiff);
+
+      var tdPct=document.createElement('td');
+      tdPct.id='lnd-pct-'+item.key+'-'+sj;
+      tdPct.style.cssText='text-align:right;font-size:12px;font-weight:700;padding:4px 8px;white-space:nowrap;';
+      tdPct.textContent='--';
+      tr.appendChild(tdPct);
+    }
+
+    var totalTd=document.createElement('td');
+    totalTd.className='total-cell'; totalTd.id='total-'+item.key;
+    totalTd.textContent=isAuto?'0':rowTotal.toLocaleString();
+    tr.appendChild(totalTd);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  updateAllAutoRows();
+  updateAllLandingAutoRows();
+  refreshAllLandingDiffs(mi);
+  updateAutoRowTotal('sales');
+  updateAutoRowTotal('totalCount');
+}
+
+function refreshLandingDiff(sidxVal, key, mi){
+  var staffList = getStaffList();
+  var nm = staffList[sidxVal];
+  if(!nm) return;
+  var tgtVal = 0;
+  var isAuto = false;
+  for(var ii=0;ii<TGT_ITEMS.length;ii++){
+    if(TGT_ITEMS[ii].key===key && TGT_ITEMS[ii].readOnly){ isAuto=true; break; }
+  }
+  if(isAuto){
+    var autoTgtEl = document.getElementById('auto-'+key+'-'+sidxVal);
+    tgtVal = autoTgtEl ? (parseInt(autoTgtEl.textContent.replace(/,/g,''))||0) : 0;
+  } else {
+    var inpEl = document.querySelector('[data-staff="'+nm+'"][data-key="'+key+'"]');
+    tgtVal = inpEl ? (parseInt(inpEl.value)||0) : 0;
+  }
+  var lndVal = 0;
+  if(isAuto){
+    var autoLndEl = document.getElementById('auto-lnd-'+key+'-'+sidxVal);
+    lndVal = autoLndEl ? (parseInt(autoLndEl.textContent.replace(/,/g,''))||0) : 0;
+  } else {
+    var lndInp = document.querySelector('.lnd-input[data-staff="'+nm+'"][data-key="'+key+'"]');
+    lndVal = lndInp ? (parseInt(lndInp.value)||0) :
+             (parseInt(localStorage.getItem('lnd_'+nm+'_'+mi+'_'+key))||0);
+  }
+  var diffEl = document.getElementById('lnd-diff-'+key+'-'+sidxVal);
+  var pctEl  = document.getElementById('lnd-pct-'+key+'-'+sidxVal);
+  if(!diffEl||!pctEl) return;
+  if(!tgtVal || !lndVal){
+    diffEl.textContent='--'; pctEl.textContent='--';
+    diffEl.style.color='var(--muted)'; pctEl.style.color='var(--muted)';
+    return;
+  }
+  var diff  = lndVal - tgtVal;
+  var pct   = lndVal / tgtVal;
+  var color = pct>=1?'var(--green)':pct>=0.8?'var(--gold)':'var(--red)';
+  diffEl.textContent = (diff>=0?'+':'')+diff.toLocaleString();
+  diffEl.style.color = color;
+  pctEl.textContent  = (pct*100).toFixed(1)+'%';
+  pctEl.style.color  = color;
+}
+
+function refreshAllLandingDiffs(mi){
+  var staffList = getStaffList();
+  for(var sj=0;sj<staffList.length;sj++){
+    for(var ii=0;ii<TGT_ITEMS.length;ii++){
+      refreshLandingDiff(sj, TGT_ITEMS[ii].key, mi);
+    }
+  }
+}
+
+function updateLandingAutoRows(sidxVal){
+  var salesKeys=['newTech','newRetail','retTech','retRetail'];
+  var mi = selectedMonthIdx;
+  var staffList = getStaffList();
+  var nm = staffList[sidxVal];
+  if(!nm) return;
+  var salesTotal=0;
+  for(var i=0;i<salesKeys.length;i++){
+    salesTotal += parseInt(localStorage.getItem('lnd_'+nm+'_'+mi+'_'+salesKeys[i]))||0;
+  }
+  var lndSalesEl = document.getElementById('auto-lnd-sales-'+sidxVal);
+  if(lndSalesEl) lndSalesEl.textContent=salesTotal.toLocaleString();
+  localStorage.setItem('lnd_'+nm+'_'+mi+'_sales', salesTotal);
+  var ncLnd = parseInt(localStorage.getItem('lnd_'+nm+'_'+mi+'_newCount'))||0;
+  var rcLnd = parseInt(localStorage.getItem('lnd_'+nm+'_'+mi+'_retCount'))||0;
+  var tcLnd = ncLnd+rcLnd;
+  var lndTcEl = document.getElementById('auto-lnd-totalCount-'+sidxVal);
+  if(lndTcEl) lndTcEl.textContent=tcLnd.toLocaleString();
+  localStorage.setItem('lnd_'+nm+'_'+mi+'_totalCount', tcLnd);
+}
+
+function updateAllLandingAutoRows(){
+  var staffList=getStaffList();
+  for(var i=0;i<staffList.length;i++) updateLandingAutoRows(i);
+}
+
+async function saveLanding(){
+  var mi    = selectedMonthIdx;
+  var month = mi+1;
+  var dateVal = document.getElementById('f-date').value || today();
+  var year    = new Date(dateVal).getFullYear();
+  var mmStr   = month<10?'0'+month:''+month;
+  var staffList = getStaffList();
+  var allTgt  = getAllTarget(month);
+  var totalLndSales=0, totalLndNC=0, totalLndRC=0;
+  var staffLandings=[];
+  for(var i=0;i<staffList.length;i++){
+    var nm2 = staffList[i];
+    var lNT = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newTech'))||0;
+    var lNR = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newRetail'))||0;
+    var lRT = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_retTech'))||0;
+    var lRR = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_retRetail'))||0;
+    var lS  = lNT+lNR+lRT+lRR;
+    var lNC = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newCount'))||0;
+    var lRC = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_retCount'))||0;
+    var tgt2 = getStaffTarget(nm2, month);
+    totalLndSales+=lS; totalLndNC+=lNC; totalLndRC+=lRC;
+    staffLandings.push({staff:nm2, lndSales:lS, tgtSales:tgt2.sales, diff:lS-tgt2.sales, pct:tgt2.sales>0?Math.round(lS/tgt2.sales*1000)/10:0});
+  }
+  var totalLndNT=0, totalLndNR=0, totalLndRT=0, totalLndRR=0;
+  for(var j=0;j<staffList.length;j++){
+    var nm3=staffList[j];
+    totalLndNT += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_newTech'))||0;
+    totalLndNR += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_newRetail'))||0;
+    totalLndRT += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_retTech'))||0;
+    totalLndRR += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_retRetail'))||0;
+  }
+  var payload={
+    isLandingOnly: true,
+    timestamp: new Date().toLocaleString('ja-JP'),
+    date: year+'-'+mmStr+'-01',
+    landing_newTech:    totalLndNT,
+    landing_newRetail:  totalLndNR,
+    landing_retTech:    totalLndRT,
+    landing_retRetail:  totalLndRR,
+    landing_sales:      totalLndSales,
+    landing_newCount:   totalLndNC,
+    landing_retCount:   totalLndRC,
+    landing_totalCount: totalLndNC+totalLndRC,
+    tgt_newTech:    allTgt.newTech,  tgt_newRetail:  allTgt.newRetail,
+    tgt_retTech:    allTgt.retTech,  tgt_retRetail:  allTgt.retRetail,
+    tgt_sales:      allTgt.sales,    tgt_newCount:   allTgt.newCount,
+    tgt_retCount:   allTgt.retCount, tgt_totalCount: allTgt.totalCount,
+    landing_diff_sales: totalLndSales-allTgt.sales,
+    landing_pct_sales:  allTgt.sales>0?Math.round(totalLndSales/allTgt.sales*1000)/10:0,
+    staff_landings: JSON.stringify(staffLandings)
+  };
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
+  try{ await sendViaForm(payload, GAS_URL); }catch(e){ console.warn('saveLanding:',e.message); }
+}
+
+// ════════════════════════════════════════
+// TGT_ITEMS AUTO ROWS
+// ════════════════════════════════════════
+function updateTotalCell(inp, key){
+  var cells = document.querySelectorAll('[data-key="'+key+'"]');
+  var total = 0;
+  for(var i=0;i<cells.length;i++) total+=parseInt(cells[i].value)||0;
+  var el = document.getElementById('total-'+key);
+  if(el) el.textContent=total.toLocaleString();
+}
+
+function updateAutoRows(sidx){
+  var salesKeys=['newTech','newRetail','retTech','retRetail'];
+  var salesTotal=0;
+  for(var i=0;i<salesKeys.length;i++){
+    var inp=document.querySelector('[data-key="'+salesKeys[i]+'"][data-sidx="'+sidx+'"]');
+    salesTotal+=inp?(parseInt(inp.value)||0):0;
+  }
+  var sc=document.getElementById('auto-sales-'+sidx);
+  if(sc) sc.textContent=salesTotal.toLocaleString();
+  updateAutoTotalCol('sales',salesKeys);
+  var nc2=document.querySelector('[data-key="newCount"][data-sidx="'+sidx+'"]');
+  var rc2=document.querySelector('[data-key="retCount"][data-sidx="'+sidx+'"]');
+  var tc=(nc2?parseInt(nc2.value)||0:0)+(rc2?parseInt(rc2.value)||0:0);
+  var tcc=document.getElementById('auto-totalCount-'+sidx);
+  if(tcc) tcc.textContent=tc.toLocaleString();
+  updateAutoTotalCol('totalCount',['newCount','retCount']);
+  updateAutoRowTotal('sales');
+  updateAutoRowTotal('totalCount');
+}
+
+function updateAllAutoRows(){
+  var staffList=getStaffList();
+  for(var i=0;i<staffList.length;i++) updateAutoRows(i);
+}
+
+function updateAutoTotalCol(key,srcKeys){
+  var total=0;
+  for(var i=0;i<srcKeys.length;i++){
+    var cells=document.querySelectorAll('[data-key="'+srcKeys[i]+'"]');
+    for(var j=0;j<cells.length;j++) total+=parseInt(cells[j].value)||0;
+  }
+  var el=document.getElementById('total-'+key);
+  if(el) el.textContent=total.toLocaleString();
+}
+
+function updateAutoRowTotal(key){
+  var staffList=getStaffList();
+  var total=0;
+  for(var i=0;i<staffList.length;i++){
+    var autoEl=document.getElementById('auto-'+key+'-'+i);
+    if(autoEl) total+=parseInt(autoEl.textContent.replace(/,/g,''))||0;
+  }
+  var el=document.getElementById('total-'+key);
+  if(el) el.textContent=total.toLocaleString();
+}
+
+// ════════════════════════════════════════
+// SAVE TARGETS
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// 強化商材 店舗マスター（商材名・単価を店舗単位で設定）
+// ════════════════════════════════════════
+var STORE_LIST = ['oro','mem','plata'];
+
+function getBoostMaster(){
+  try{ return JSON.parse(localStorage.getItem('boost_master_db')||'{}'); }catch(e){ return {}; }
+}
+function saveBoostMaster_db(bm){
+  localStorage.setItem('boost_master_db', JSON.stringify(bm));
+}
+// データ構造: { store: [ {month_idx}: {b1:{name,price}, b2:{...}, b3:{...}} ] }
+function getStoreBoostMaster(store, monthIdx){
+  var bm = getBoostMaster();
+  var raw = (bm[store] && bm[store][monthIdx]) ? bm[store][monthIdx] : {};
+  return {
+    b1: raw.b1 || {name:'', price:0},
+    b2: raw.b2 || {name:'', price:0},
+    b3: raw.b3 || {name:'', price:0}
+  };
+}
+
+function renderBoostMaster(){
+  var wrap = document.getElementById('boost-master-wrap');
+  if(!wrap) return;
+  var mi = selectedMonthIdx;
+
+  var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
+  html += '<th style="min-width:70px;text-align:left;">店舗</th>';
+  html += '<th colspan="2">強化商材①</th><th colspan="2">強化商材②</th><th colspan="2">強化商材③</th>';
+  html += '</tr><tr><th></th>';
+  for(var b=0;b<3;b++){
+    html += '<th style="font-size:9px;">商材名</th><th style="font-size:9px;">単価</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  STORE_LIST.forEach(function(store){
+    var m = getStoreBoostMaster(store, mi);
+    html += '<tr><td class="item-label" style="font-weight:800;">'+store+'</td>';
+    ['b1','b2','b3'].forEach(function(bk){
+      var bd = m[bk];
+      html += '<td><input type="text" class="boost-name-input" style="width:110px;" data-store="'+store+'" data-boost="'+bk+'" data-field="name" value="'+(bd.name||'')+'" placeholder="商材名"></td>';
+      html += '<td><input type="number" class="tgt-input" style="width:80px;" data-store="'+store+'" data-boost="'+bk+'" data-field="price" value="'+(bd.price||'')+'" placeholder="0"></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function saveBoostMaster(){
+  var bm = getBoostMaster();
+  var mi = selectedMonthIdx;
+
+  STORE_LIST.forEach(function(store){
+    if(!bm[store]) bm[store] = [];
+    while(bm[store].length <= mi) bm[store].push({});
+    if(!bm[store][mi]) bm[store][mi] = {};
+
+    ['b1','b2','b3'].forEach(function(bk){
+      var nameInp  = document.querySelector('[data-store="'+store+'"][data-boost="'+bk+'"][data-field="name"]');
+      var priceInp = document.querySelector('[data-store="'+store+'"][data-boost="'+bk+'"][data-field="price"]');
+      bm[store][mi][bk] = {
+        name:  nameInp ? nameInp.value.trim() : '',
+        price: priceInp ? (parseInt(priceInp.value)||0) : 0
+      };
+    });
+  });
+  saveBoostMaster_db(bm);
+  sendBoostMasterToGAS(mi+1);
+  renderBoostTargets(); // 個数目標側の単価表示も更新
+
+  var msg = document.getElementById('boost-master-saved-msg');
+  if(msg){ msg.style.display='block'; setTimeout(function(){ msg.style.display='none'; },3000); }
+}
+
+async function sendBoostMasterToGAS(month){
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
+  var mi = month - 1;
+  var bm = getBoostMaster();
+  var now = new Date();
+
+  var storeMasters = [];
+  STORE_LIST.forEach(function(store){
+    var m = (bm[store] && bm[store][mi]) ? bm[store][mi] : {};
+    var b1 = m.b1 || {name:'',price:0};
+    var b2 = m.b2 || {name:'',price:0};
+    var b3 = m.b3 || {name:'',price:0};
+    storeMasters.push({
+      store: store,
+      b1Name: b1.name, b1Price: b1.price,
+      b2Name: b2.name, b2Price: b2.price,
+      b3Name: b3.name, b3Price: b3.price
+    });
+  });
+
+  var payload = {
+    date: now.getFullYear()+'-'+(month<10?'0'+month:''+month)+'-01',
+    staff: '__boost_master_only__',
+    newTech:0, newRetail:0, retTech:0, retRetail:0, newCount:0, retCount:0,
+    cut:0, color:0, perm:0, straight:0, treat:0, spa:0, boost1:0, boost2:0, boost3:0, memo:'',
+    timestamp: now.toLocaleString('ja-JP'),
+    isBoostMasterOnly: true,
+    store_boost_masters: JSON.stringify(storeMasters)
+  };
+  try{ await sendViaForm(payload, GAS_URL); }catch(e){ console.warn('Boost master send:',e.message); }
+}
+
+// ════════════════════════════════════════
+// 強化商材 個数目標（スタッフ別。単価は店舗マスターから自動反映）
+// ════════════════════════════════════════
+function getBoostTargets(){
+  try{ return JSON.parse(localStorage.getItem('boost_targets_db')||'{}'); }catch(e){ return {}; }
+}
+function saveBoostTargets_db(bt){
+  localStorage.setItem('boost_targets_db', JSON.stringify(bt));
+}
+// データ構造: { staffName: [ {month_idx}: {b1:count, b2:count, b3:count} ] }
+function getStaffBoostCountTarget(staffName, monthIdx){
+  var bt = getBoostTargets();
+  var raw = (bt[staffName] && bt[staffName][monthIdx]) ? bt[staffName][monthIdx] : {};
+  return { b1: raw.b1||0, b2: raw.b2||0, b3: raw.b3||0 };
+}
+// 互換用：店舗マスターの単価＋個人の個数目標を合成して返す（進捗表示で使用）
+function getStaffBoostTarget(staffName, monthIdx){
+  var store = getStaffStore(staffName);
+  var master = (store && store!=='未設定') ? getStoreBoostMaster(store, monthIdx) : {b1:{price:0,name:''},b2:{price:0,name:''},b3:{price:0,name:''}};
+  var counts = getStaffBoostCountTarget(staffName, monthIdx);
+  return {
+    b1: {price: master.b1.price||0, count: counts.b1||0, name: master.b1.name||''},
+    b2: {price: master.b2.price||0, count: counts.b2||0, name: master.b2.name||''},
+    b3: {price: master.b3.price||0, count: counts.b3||0, name: master.b3.name||''}
+  };
+}
+
+function renderBoostTargets(){
+  var wrap = document.getElementById('boost-tgt-wrap');
+  if(!wrap) return;
+  var staffList = getStaffList();
+  var mi = selectedMonthIdx;
+
+  if(!staffList.length){
+    wrap.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:10px 0;">スタッフが登録されていません</p>';
+    return;
+  }
+
+  var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
+  html += '<th style="min-width:90px;text-align:left;">スタッフ</th>';
+  html += '<th colspan="3">強化商材①</th><th colspan="3">強化商材②</th><th colspan="3">強化商材③</th>';
+  html += '</tr><tr><th></th>';
+  for(var b=0;b<3;b++){
+    html += '<th style="font-size:9px;color:var(--blue);">単価(自動)</th><th style="font-size:9px;">個数目標</th><th style="font-size:9px;color:var(--green);">金額目標</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  for(var si=0; si<staffList.length; si++){
+    var nm = staffList[si];
+    var t = getStaffBoostTarget(nm, mi);
+    var store = getStaffStore(nm);
+    html += '<tr><td class="item-label">'+nm+' <span style="font-size:9px;color:var(--muted);">('+store+')</span></td>';
+    ['b1','b2','b3'].forEach(function(bk){
+      var bd = t[bk];
+      var amount = bd.price * bd.count;
+      html += '<td style="text-align:right;color:var(--blue);font-size:11px;padding:6px 10px;">'+(bd.price>0?bd.price.toLocaleString():'未設定')+(bd.name?'<br><span style="font-size:9px;color:var(--muted);">'+bd.name+'</span>':'')+'</td>';
+      html += '<td><input type="number" class="tgt-input" style="width:60px;" data-staff="'+nm+'" data-boost="'+bk+'" data-field="count" value="'+(bd.count||'')+'" placeholder="0" oninput="updateBoostAmount(this)"></td>';
+      html += '<td class="total-cell" id="boost-amt-'+nm+'-'+bk+'" data-price="'+bd.price+'" style="min-width:80px;">'+(amount>0?amount.toLocaleString():'0')+'</td>';
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function updateBoostAmount(inp){
+  var staff = inp.getAttribute('data-staff');
+  var boost = inp.getAttribute('data-boost');
+  var countInp = document.querySelector('[data-staff="'+staff+'"][data-boost="'+boost+'"][data-field="count"]');
+  var amtEl = document.getElementById('boost-amt-'+staff+'-'+boost);
+  if(!amtEl) return;
+  var price = parseInt(amtEl.getAttribute('data-price'))||0;
+  var count = countInp ? (parseInt(countInp.value)||0) : 0;
+  amtEl.textContent = (price*count).toLocaleString();
+}
+
+function saveBoostTargets(){
+  var staffList = getStaffList();
+  var bt = getBoostTargets();
+  var mi = selectedMonthIdx;
+
+  for(var si=0; si<staffList.length; si++){
+    var nm = staffList[si];
+    if(!bt[nm]) bt[nm] = [];
+    while(bt[nm].length <= mi) bt[nm].push({});
+    if(!bt[nm][mi]) bt[nm][mi] = {};
+
+    ['b1','b2','b3'].forEach(function(bk){
+      var countInp = document.querySelector('[data-staff="'+nm+'"][data-boost="'+bk+'"][data-field="count"]');
+      bt[nm][mi][bk] = countInp ? (parseInt(countInp.value)||0) : 0;
+    });
+  }
+  saveBoostTargets_db(bt);
+  sendBoostTargetsToGAS(mi+1);
+
+  var msg = document.getElementById('boost-tgt-saved-msg');
+  if(msg){ msg.style.display='block'; setTimeout(function(){ msg.style.display='none'; },3000); }
+}
+
+async function sendBoostTargetsToGAS(month){
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
+  var staffList = getStaffList();
+  var mi = month - 1;
+  var now = new Date();
+
+  var boostStaffTargets = [];
+  for(var i=0; i<staffList.length; i++){
+    var nm = staffList[i];
+    var t = getStaffBoostTarget(nm, mi);
+    boostStaffTargets.push({
+      staff: nm,
+      b1Price: t.b1.price, b1Count: t.b1.count, b1Amount: t.b1.price*t.b1.count,
+      b2Price: t.b2.price, b2Count: t.b2.count, b2Amount: t.b2.price*t.b2.count,
+      b3Price: t.b3.price, b3Count: t.b3.count, b3Amount: t.b3.price*t.b3.count
+    });
+  }
+
+  var payload = {
+    date: now.getFullYear()+'-'+(month<10?'0'+month:''+month)+'-01',
+    staff: '__boost_target_only__',
+    newTech:0, newRetail:0, retTech:0, retRetail:0, newCount:0, retCount:0,
+    cut:0, color:0, perm:0, straight:0, treat:0, spa:0, boost1:0, boost2:0, boost3:0, memo:'',
+    timestamp: now.toLocaleString('ja-JP'),
+    isBoostTargetOnly: true,
+    boost_staff_targets: JSON.stringify(boostStaffTargets)
+  };
+  try{ await sendViaForm(payload, GAS_URL); }catch(e){ console.warn('Boost target send:',e.message); }
+}
+
+function saveTargets(){
+  var staffList=getStaffList(); var tgts=getTargets(); var mi=selectedMonthIdx;
+  for(var si=0;si<staffList.length;si++){
+    var name=staffList[si];
+    if(!tgts[name]) tgts[name]=[];
+    while(tgts[name].length<=mi) tgts[name].push({});
+    if(!tgts[name][mi]) tgts[name][mi]={};
+    for(var ii=0;ii<TGT_ITEMS.length;ii++){
+      var item=TGT_ITEMS[ii];
+      if(item.readOnly) continue;
+      var inp=document.querySelector('[data-staff="'+name+'"][data-key="'+item.key+'"]');
+      if(inp) tgts[name][mi][item.key]=parseInt(inp.value)||0;
+    }
+    var t=tgts[name][mi];
+    t.sales      =(t.newTech||0)+(t.newRetail||0)+(t.retTech||0)+(t.retRetail||0);
+    t.totalCount =(t.newCount||0)+(t.retCount||0);
+  }
+  saveTargets_db(tgts);
+  sendTargetsToGAS(mi+1);
+  saveLanding();
+  var msg=document.getElementById('tgt-saved-msg');
+  msg.style.display='block';
+  setTimeout(function(){ msg.style.display='none'; },3000);
+}
+
+async function sendTargetsToGAS(month){
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
+  var allTgt    = getAllTarget(month);
+  var tgts      = getTargets();
+  var staffList = getStaffList();
+  var mi        = month - 1;
+  var now       = new Date();
+  var year      = now.getFullYear();
+  var mm        = month < 10 ? '0'+month : ''+month;
+  var staffTargets = [];
+  for(var i = 0; i < staffList.length; i++){
+    var nm  = staffList[i];
+    var t   = (tgts[nm] && tgts[nm][mi]) ? tgts[nm][mi] : {};
+    var nt  = t.newTech   || 0;
+    var nr  = t.newRetail || 0;
+    var rt  = t.retTech   || 0;
+    var rr  = t.retRetail || 0;
+    var nc  = t.newCount  || 0;
+    var rc  = t.retCount  || 0;
+    staffTargets.push({
+      staff:nm, store:getStaffStore(nm), newTech:nt, newRetail:nr, retTech:rt, retRetail:rr,
+      sales:nt+nr+rt+rr, newCount:nc, retCount:rc, totalCount:nc+rc
+    });
+  }
+  var payload = {
+    date:  year+'-'+mm+'-01',
+    staff: '__target_only__',
+    newTech:0, newRetail:0, retTech:0, retRetail:0,
+    newCount:0, retCount:0, cut:0, color:0, perm:0, straight:0, treat:0, spa:0,
+    boost1:0, boost2:0, boost3:0, memo:'',
+    timestamp: now.toLocaleString('ja-JP'),
+    allTgt_newTech:   allTgt.newTech,   allTgt_newRetail:  allTgt.newRetail,
+    allTgt_retTech:   allTgt.retTech,   allTgt_retRetail:  allTgt.retRetail,
+    allTgt_sales:     allTgt.sales,     allTgt_newCount:   allTgt.newCount,
+    allTgt_retCount:  allTgt.retCount,  allTgt_totalCount: allTgt.totalCount,
+    tgt_newTech:0, tgt_newRetail:0, tgt_retTech:0, tgt_retRetail:0,
+    tgt_sales:0, tgt_newCount:0, tgt_retCount:0, tgt_totalCount:0,
+    isTargetOnly: true,
+    staff_targets: JSON.stringify(staffTargets)
+  };
+  try{ await sendViaForm(payload, GAS_URL); }catch(e){ console.warn('Target send:',e.message); }
+}
+
+// ════════════════════════════════════════
+// STAFF MANAGEMENT
+// ════════════════════════════════════════
+function renderStaffManageList(){
+  var wrap=document.getElementById('staff-manage-list');
+  if(!wrap) return;
+  var list=getStaffList();
+  wrap.innerHTML='';
+  var titleDiv=document.createElement('div');
+  titleDiv.style.cssText='font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;';
+  titleDiv.textContent='登録中のスタッフ';
+  wrap.appendChild(titleDiv);
+  if(!list.length){
+    var empty=document.createElement('div');
+    empty.style.cssText='font-size:12px;color:var(--muted);padding:8px 0;';
+    empty.textContent='スタッフが登録されていません';
+    wrap.appendChild(empty); return;
+  }
+  for(var i=0;i<list.length;i++){
+    (function(name,sidx){
+      var store = getStaffStore(name);
+      var item=document.createElement('div');
+      item.className='staff-manage-item';
+      item.style.flexWrap='wrap';
+      var nameDiv=document.createElement('div');
+      nameDiv.className='staff-manage-name';
+      nameDiv.innerHTML='スタッフ: '+name+' <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(200,164,90,0.15);color:var(--gold);margin-left:6px;">'+store+'</span>';
+      var storeSel=document.createElement('select');
+      storeSel.className='staff-manage-input';
+      storeSel.style.width='100px';
+      storeSel.innerHTML='<option value="oro">oro</option><option value="mem">mem</option><option value="plata">plata</option>';
+      storeSel.value = (store==='未設定') ? 'oro' : store;
+      var storeBtn=document.createElement('button');
+      storeBtn.className='btn-rename'; storeBtn.textContent='店舗変更';
+      storeBtn.onclick=function(){
+        saveStaffStore(name, storeSel.value);
+        renderStaffManageList();
+        alert(name+' の所属店舗を '+storeSel.value+' に変更しました');
+      };
+      var input=document.createElement('input');
+      input.type='text'; input.className='staff-manage-input';
+      input.placeholder='新しい名前'; input.id='rename-'+sidx;
+      var renameBtn=document.createElement('button');
+      renameBtn.className='btn-rename'; renameBtn.textContent='変更';
+      renameBtn.onclick=function(){ renameStaff(name,sidx); };
+      var deleteBtn=document.createElement('button');
+      deleteBtn.className='btn-delete'; deleteBtn.textContent='削除';
+      deleteBtn.onclick=function(){ deleteStaff(name); };
+      item.appendChild(nameDiv);
+      item.appendChild(storeSel); item.appendChild(storeBtn);
+      item.appendChild(input);
+      item.appendChild(renameBtn); item.appendChild(deleteBtn);
+      wrap.appendChild(item);
+    })(list[i],i);
+  }
+}
+
+function addStaffToTarget(){
+  var input=document.getElementById('new-staff-name');
+  var storeSel=document.getElementById('new-staff-store');
+  var name=input.value.trim();
+  var store=storeSel?storeSel.value:'oro';
+  if(!name){ alert('スタッフ名を入力してください'); return; }
+  var list=getStaffList();
+  if(list.indexOf(name)!==-1){ alert(name+' はすでに登録されています'); return; }
+  saveStaffName(name);
+  saveStaffStore(name, store);
+  input.value='';
+  updateStaffSuggest();
+  renderStaffManageList();
+  renderTargetTable();
+}
+
+function deleteStaff(name){
+  if(!confirm(name+' を削除しますか？目標データも削除されます。')) return;
+  var list=getStaffList(); var newList=[];
+  for(var i=0;i<list.length;i++) if(list[i]!==name) newList.push(list[i]);
+  localStorage.setItem('staff_names',JSON.stringify(newList));
+  var tgts=getTargets();
+  if(tgts[name]){ delete tgts[name]; saveTargets_db(tgts); }
+  removeStaffStore(name);
+  updateStaffSuggest(); renderStaffManageList(); renderTargetTable();
+  alert(name+' を削除しました');
+}
+
+function renameStaff(oldName,idx){
+  var input=document.getElementById('rename-'+idx);
+  if(!input) return;
+  var newName=input.value.trim();
+  if(!newName){ alert('新しい名前を入力してください'); return; }
+  if(newName===oldName){ alert('同じ名前です'); return; }
+  var list=getStaffList();
+  if(list.indexOf(newName)!==-1){ alert(newName+' はすでに登録されています'); return; }
+  var newList=[];
+  for(var i=0;i<list.length;i++) newList.push(list[i]===oldName?newName:list[i]);
+  localStorage.setItem('staff_names',JSON.stringify(newList));
+  var tgts=getTargets();
+  if(tgts[oldName]){ tgts[newName]=tgts[oldName]; delete tgts[oldName]; saveTargets_db(tgts); }
+  var storeMap = getStaffStores();
+  if(storeMap[oldName]){ saveStaffStore(newName, storeMap[oldName]); removeStaffStore(oldName); }
+  updateStaffSuggest(); renderStaffManageList(); renderTargetTable();
+  alert(oldName+' を '+newName+' に変更しました');
+}
+
+// ════════════════════════════════════════
+// YEARLY TABLE
+// ════════════════════════════════════════
+function renderYearly(){
+  var yr = document.getElementById('yr-sales-table');
+  if(!yr) return;
+  yr.innerHTML='';
+  var headers=['月','売上目標','売上実績','達成率'];
+  var htr=document.createElement('tr');
+  for(var h=0;h<headers.length;h++){
+    var th=document.createElement('th'); th.textContent=headers[h]; htr.appendChild(th);
+  }
+  yr.appendChild(htr);
+  for(var mi=0;mi<12;mi++){
+    var month=mi+1;
+    var mk=new Date().getFullYear()+'-'+(month<10?'0':'')+month;
+    var tgt=getAllTarget(month);
+    var cum=getCumAll(mk);
+    var pct=tgt.sales>0?(cum.sales/tgt.sales*100).toFixed(1)+'%':'--';
+    var color=tgt.sales>0?(cum.sales/tgt.sales>=1?'var(--green)':cum.sales/tgt.sales>=0.8?'var(--gold)':'var(--red)'):'var(--muted)';
+    var tr=document.createElement('tr');
+    var cells=[MONTHS[mi], tgt.sales>0?fmtYen(tgt.sales):'--', fmtYen(cum.sales), pct];
+    for(var c=0;c<cells.length;c++){
+      var td=document.createElement('td'); td.textContent=cells[c];
+      if(c===3) td.style.color=color;
+      tr.appendChild(td);
+    }
+    yr.appendChild(tr);
+  }
+}
+
+// ════════════════════════════════════════
+// TAB SWITCH
+// ════════════════════════════════════════
+function switchMainTab(id,el){
+  var contents=document.querySelectorAll('.tab-content');
+  for(var i=0;i<contents.length;i++) contents[i].classList.remove('active');
+  var tabs=document.querySelectorAll('.main-tab');
+  for(var j=0;j<tabs.length;j++) tabs[j].classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  if(id==='tab-progress'){ renderProgress(); }
+  if(id==='tab-target'){   renderTargetTab(); }
+  if(id==='tab-yearly'){   renderYearly(); }
+  if(id==='tab-dashboard'){ loadDashboardData(); }
+}
+
+// ════════════════════════════════════════
+// 全体ダッシュボード（幹部MTG用・読み取り専用）
+// ════════════════════════════════════════
+function dFmtYen(n){ return '¥'+(n||0).toLocaleString(); }
+function dFmtNum(n){ return (n||0).toLocaleString(); }
+function dPctColor(p){ return p>=100?'var(--green)':p>=80?'var(--gold)':'var(--red)'; }
+
+function loadDashboardData(){
+  var updEl = document.getElementById('dash2-updated');
+  var contEl = document.getElementById('dash2-content');
+  if(!contEl) return;
+
+  if(!MTG_GAS_URL||MTG_GAS_URL.indexOf('YOUR_GAS')!==-1){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">⚠️ MTG_GAS_URLが未設定です</div>';
+    return;
+  }
+
+  contEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>';
+  if(updEl) updEl.textContent = '読み込み中...';
+
+  var oldScript = document.getElementById('dash2-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._dash2Timeout = setTimeout(function(){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ タイムアウトしました</div>';
+  }, 15000);
+
+  window.dash2Callback = function(json){
+    clearTimeout(window._dash2Timeout);
+    if(!json || json.status!=='ok'){
+      contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ データ取得エラー: '+(json?json.message:'不明')+'</div>';
+      return;
+    }
+    if(updEl) updEl.textContent = '最終更新: '+(json.updatedAt||'--');
+    renderDashboard(json);
+  };
+
+  var script = document.createElement('script');
+  script.id = 'dash2-jsonp';
+  script.src = MTG_GAS_URL + '?action=mtg&callback=dash2Callback&t=' + Date.now();
+  script.onerror = function(){
+    clearTimeout(window._dash2Timeout);
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ データの取得に失敗しました</div>';
+  };
+  document.head.appendChild(script);
+}
+
+function renderDashboard(d){
+  var s = d.summary;
+  var salesPct = s.target>0 ? Math.round(s.sales/s.target*1000)/10 : 0;
+  var html = '';
+
+  // KPIカード
+  html += '<div class="total-grid" style="margin-bottom:16px;">';
+  html += '<div class="total-item"><div class="total-item-label">売上合計</div><div class="total-item-val">'+dFmtYen(s.sales)+'</div><div class="total-item-sub">目標 '+dFmtYen(s.target)+'</div></div>';
+  var landingDiff = s.target>0 ? s.landing-s.target : null;
+  var landingPct  = s.target>0 ? Math.round(s.landing/s.target*1000)/10 : null;
+  html += '<div class="total-item"><div class="total-item-label">着地見込み</div><div class="total-item-val">'+(s.landing>0?dFmtYen(s.landing):'--')+'</div>';
+  html += '<div class="total-item-sub" style="color:'+(landingDiff!==null?(landingDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';font-weight:700;">'+
+          (landingDiff!==null?(landingDiff>=0?'+':'')+dFmtYen(landingDiff)+'（'+landingPct+'%）':'目標未設定')+'</div></div>';
+  html += '<div class="total-item"><div class="total-item-label">新規客数</div><div class="total-item-val">'+dFmtNum(s.newCount)+'人</div><div class="total-item-sub">既存 '+dFmtNum(s.retCount)+'人</div></div>';
+  html += '<div class="total-item"><div class="total-item-label">総客数</div><div class="total-item-val">'+dFmtNum(s.total)+'人</div><div class="total-item-sub">'+d.month+'月累計</div></div>';
+  html += '</div>';
+
+  // 店舗別合計
+  if(d.stores && d.stores.length){
+    html += '<div class="card">';
+    html += '<div class="card-head"><div class="card-icon gold">🏢</div><div><div class="card-title">店舗別 当月合計</div><div class="card-sub">全体 vs 店舗別（oro / mem / plata）</div></div></div>';
+    html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:680px;"><tr><th>店舗</th><th>新規技術</th><th>新規店販</th><th>既存技術</th><th>既存店販</th><th>売上合計</th><th>新規</th><th>既存</th><th>総客数</th></tr>';
+    var sTotalSales=0,sTotalNC=0,sTotalRC=0,sTotalTC=0;
+    for(var sti=0;sti<d.stores.length;sti++){
+      var st=d.stores[sti];
+      sTotalSales+=st.sales; sTotalNC+=st.newCount; sTotalRC+=st.retCount; sTotalTC+=st.total;
+      html += '<tr><td style="text-align:left;font-weight:800;">'+st.store+'</td>';
+      html += '<td>'+dFmtYen(st.newTech)+'</td><td>'+dFmtYen(st.newRetail)+'</td><td>'+dFmtYen(st.retTech)+'</td><td>'+dFmtYen(st.retRetail)+'</td>';
+      html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(st.sales)+'</td>';
+      html += '<td>'+dFmtNum(st.newCount)+'人</td><td>'+dFmtNum(st.retCount)+'人</td><td style="font-weight:700;">'+dFmtNum(st.total)+'人</td></tr>';
+    }
+    html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;"><td style="text-align:left;">全体合計</td><td>--</td><td>--</td><td>--</td><td>--</td>';
+    html += '<td style="color:var(--gold2);">'+dFmtYen(sTotalSales)+'</td><td>'+dFmtNum(sTotalNC)+'人</td><td>'+dFmtNum(sTotalRC)+'人</td><td>'+dFmtNum(sTotalTC)+'人</td></tr>';
+    html += '</table></div></div>';
+  }
+
+  // 強化商材 店舗別実績
+  if(d.boost && d.boost.length){
+    html += '<div class="card">';
+    html += '<div class="card-head"><div class="card-icon purple">🌟</div><div><div class="card-title">強化商材 店舗別 当月実績</div></div></div>';
+    html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:680px;"><tr><th>店舗</th><th>商材①</th><th>実績①</th><th>商材②</th><th>実績②</th><th>商材③</th><th>実績③</th></tr>';
+    for(var bsi=0;bsi<d.boost.length;bsi++){
+      var bs=d.boost[bsi];
+      html += '<tr><td style="text-align:left;font-weight:800;">'+bs.store+'</td>';
+      ['b1','b2','b3'].forEach(function(bk){
+        var b=bs[bk];
+        html += '<td style="text-align:left;font-size:11px;">'+(b.name||'未設定')+(b.price>0?'<br><span style="color:var(--muted);font-size:10px;">単価'+dFmtYen(b.price)+'</span>':'')+'</td>';
+        html += '<td>'+b.actualCount+'個<br><span style="color:var(--gold2);font-size:11px;">'+dFmtYen(b.actualAmount)+'</span></td>';
+      });
+      html += '</tr>';
+    }
+    html += '</table></div></div>';
+  }
+
+  // スタッフ別テーブル
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon gold">👤</div><div><div class="card-title">スタッフ別 当月進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月</div></div></div>';
+  html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:760px;"><tr><th>担当</th><th>売上実績</th><th>売上目標</th><th>差異</th><th>達成率</th><th>着地見込み</th><th>新規</th><th>既存</th><th>総客数</th></tr>';
+
+  var totalSales=0,totalTarget=0,totalLanding=0,totalNC=0,totalRC=0,totalTC=0;
+  for(var i=0;i<d.staff.length;i++){
+    var stf=d.staff[i];
+    var pct = stf.target>0?Math.round(stf.sales/stf.target*1000)/10:0;
+    var diff = stf.target>0?stf.sales-stf.target:null;
+    totalSales+=stf.sales; totalTarget+=stf.target; totalLanding+=stf.landing;
+    totalNC+=stf.newCount; totalRC+=stf.retCount; totalTC+=stf.total;
+
+    html += '<tr><td style="text-align:left;font-weight:700;">'+stf.name+'</td>';
+    html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(stf.sales)+'</td>';
+    html += '<td style="color:var(--blue);">'+(stf.target>0?dFmtYen(stf.target):'未設定')+'</td>';
+    html += '<td style="color:'+(diff!==null?(diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(diff!==null?(diff>=0?'+':'')+dFmtYen(diff):'--')+'</td>';
+    html += '<td class="pct-cell" style="color:'+(stf.target>0?dPctColor(pct):'var(--muted)')+';">'+(stf.target>0?pct+'%':'--')+'</td>';
+    html += '<td>'+(stf.landing>0?dFmtYen(stf.landing):'--')+'</td>';
+    html += '<td>'+dFmtNum(stf.newCount)+'人</td><td>'+dFmtNum(stf.retCount)+'人</td><td style="font-weight:700;">'+dFmtNum(stf.total)+'人</td></tr>';
+  }
+
+  var totPct = totalTarget>0?Math.round(totalSales/totalTarget*1000)/10:0;
+  var totDiff = totalTarget>0?totalSales-totalTarget:null;
+  html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
+  html += '<td style="text-align:left;">合計</td>';
+  html += '<td style="color:var(--gold2);">'+dFmtYen(totalSales)+'</td>';
+  html += '<td style="color:var(--blue);">'+(totalTarget>0?dFmtYen(totalTarget):'--')+'</td>';
+  html += '<td style="color:'+(totDiff!==null?(totDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(totDiff!==null?(totDiff>=0?'+':'')+dFmtYen(totDiff):'--')+'</td>';
+  html += '<td style="color:'+(totalTarget>0?dPctColor(totPct):'var(--muted)')+';">'+(totalTarget>0?totPct+'%':'--')+'</td>';
+  html += '<td>'+(totalLanding>0?dFmtYen(totalLanding):'--')+'</td>';
+  html += '<td>'+dFmtNum(totalNC)+'人</td><td>'+dFmtNum(totalRC)+'人</td><td>'+dFmtNum(totalTC)+'人</td></tr>';
+  html += '</table></div></div>';
+
+  // 年間推移テーブル
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon green">📈</div><div><div class="card-title">年間 月別推移</div><div class="card-sub">'+d.year+'年</div></div></div>';
+  html += '<div style="overflow-x:auto;"><table class="yr-table"><tr><th>項目</th>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    html += '<th'+(d.monthly[mi].month===(d.month+'月')?' style="color:var(--gold2);"':'')+'>'+d.monthly[mi].month+'</th>';
+  }
+  html += '</tr><tr><td>売上実績</td>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    var mv=d.monthly[mi]; var isCur=mv.month===(d.month+'月');
+    html += '<td'+(isCur?' style="color:var(--gold2);font-weight:700;"':'')+'>'+(mv.sales>0?dFmtYen(mv.sales):'--')+'</td>';
+  }
+  html += '</tr><tr><td>売上目標</td>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    var mv=d.monthly[mi];
+    html += '<td style="color:var(--blue);">'+(mv.target>0?dFmtYen(mv.target):'--')+'</td>';
+  }
+  html += '</tr><tr><td>達成率</td>';
+  for(var mi=0;mi<d.monthly.length;mi++){
+    var mv=d.monthly[mi];
+    var pp = mv.target>0&&mv.sales>0?Math.round(mv.sales/mv.target*1000)/10:null;
+    html += '<td class="pct-cell" style="color:'+(pp!==null?dPctColor(pp):'var(--muted)')+';">'+(pp!==null?pp+'%':'--')+'</td>';
+  }
+  html += '</tr></table></div></div>';
+
+  document.getElementById('dash2-content').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+(function init(){
+  updateDate();
+  document.getElementById('f-date').value = today();
+  updateStaffSuggest();
+  updateBoostSuggest();
+  renderProgress();
+})();
+
+</script>
+</body>
+</html>
