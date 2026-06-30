@@ -490,7 +490,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxCbai0PzU0BUi8L0E57ZDkQYgWYP9QEZQNoy5LPlhSMKZjVf-HJ67ViO5NnvV_qSC3zA/exec';
 // 全体ダッシュボード（幹部MTG用）専用GAS。別プロジェクトでデプロイしたURLを設定。
-var MTG_GAS_URL = 'https://script.google.com/macros/s/AKfycbwgamY58SWwKYTS7wyI-wvemmhvmpPtroAkxDkrKfyC2tKWTh__siCcTBO3mvDcUMrctg/exec';
+var MTG_GAS_URL = 'https://script.google.com/macros/s/AKfycbyABBLkhg1W_GUk6ZP3eDu7DCIFQR4mYLHnnoYYKmVrBkXa1MIkcUrJSh8JjCgqobewqQ/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -1936,7 +1936,7 @@ function dFmtYen(n){ return '¥'+(n||0).toLocaleString(); }
 function dFmtNum(n){ return (n||0).toLocaleString(); }
 function dPctColor(p){ return p>=100?'var(--green)':p>=80?'var(--gold)':'var(--red)'; }
 
-async function loadDashboardData(){
+function loadDashboardData(){
   var updEl = document.getElementById('dash2-updated');
   var contEl = document.getElementById('dash2-content');
   if(!contEl) return;
@@ -1949,24 +1949,31 @@ async function loadDashboardData(){
   contEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>';
   if(updEl) updEl.textContent = '読み込み中...';
 
-  try{
-    var ctrl = new AbortController();
-    var tid = setTimeout(function(){ ctrl.abort(); }, 15000);
-    var res = await fetch(MTG_GAS_URL + '?action=mtg&t=' + Date.now(), {
-      method: 'GET',
-      signal: ctrl.signal
-    });
-    clearTimeout(tid);
-    var json = await res.json();
+  var oldScript = document.getElementById('dash2-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._dash2Timeout = setTimeout(function(){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ タイムアウトしました（15秒）<br><small>ネットワーク環境やセキュリティ設定が原因の可能性があります</small></div>';
+  }, 15000);
+
+  window.dash2Callback = function(json){
+    clearTimeout(window._dash2Timeout);
     if(!json || json.status!=='ok'){
       contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ データ取得エラー: '+(json?json.message:'不明')+'</div>';
       return;
     }
     if(updEl) updEl.textContent = '最終更新: '+(json.updatedAt||'--');
     renderDashboard(json);
-  }catch(e){
-    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ データの取得に失敗しました<br><small>'+e.message+'</small></div>';
-  }
+  };
+
+  var script = document.createElement('script');
+  script.id = 'dash2-jsonp';
+  script.src = MTG_GAS_URL + '?action=mtg&callback=dash2Callback&t=' + Date.now();
+  script.onerror = function(e){
+    clearTimeout(window._dash2Timeout);
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ スクリプト読み込みエラー（onerror発火）</div>';
+  };
+  document.body.appendChild(script);
 }
 
 function renderDashboard(d){
