@@ -62,6 +62,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .ti::placeholder{color:var(--muted);opacity:0.45;}
 .ti:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,90,0.10);background:var(--card);}
 .ti.num{text-align:right;font-family:'Syne',sans-serif;font-weight:600;}
+.no-spin::-webkit-outer-spin-button,.no-spin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.no-spin{-moz-appearance:textfield;}
 .ti.num-blue{background:rgba(90,122,172,0.08);border-color:rgba(90,122,172,0.3);color:var(--blue);}
 .ti.num-blue:focus{border-color:var(--blue);}
 input[type="date"].ti{color-scheme:dark;}
@@ -220,9 +222,9 @@ input[type="date"].ti{color-scheme:dark;}
   <div class="main-tabs-inner">
     <div class="main-tab active" onclick="switchMainTab('tab-input',this)">📝 日次入力</div>
     <div class="main-tab" onclick="switchMainTab('tab-progress',this)">📊 進捗ダッシュボード</div>
+    <div class="main-tab" onclick="switchMainTab('tab-dashboard',this)">🏢 全体ダッシュボード</div>
     <div class="main-tab" onclick="switchMainTab('tab-target',this)">🎯 目標設定</div>
     <div class="main-tab" onclick="switchMainTab('tab-yearly',this)">📈 年間推移</div>
-    <div class="main-tab" onclick="switchMainTab('tab-dashboard',this)">🏢 全体ダッシュボード</div>
   </div>
 </div>
 
@@ -261,13 +263,13 @@ input[type="date"].ti{color-scheme:dark;}
     </div>
     <div class="sec-lbl new-c" style="margin-bottom:10px;">🌱 新規客</div>
     <div class="ig ig2" style="margin-bottom:16px;">
-      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num" id="f-new-tech" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num" id="f-new-retail" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num no-spin" id="f-new-tech" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num no-spin" id="f-new-retail" placeholder="0" min="0" oninput="calcAll()"></div>
     </div>
     <div class="sec-lbl ret-c" style="margin-bottom:10px;">🔁 既存客</div>
     <div class="ig ig2" style="margin-bottom:12px;">
-      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num" id="f-ret-tech" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num" id="f-ret-retail" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num no-spin" id="f-ret-tech" placeholder="0" min="0" oninput="calcAll()"></div>
+      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num no-spin" id="f-ret-retail" placeholder="0" min="0" oninput="calcAll()"></div>
     </div>
     <div class="subtotal"><div class="subtotal-label">本日売上合計</div><div class="subtotal-val" id="sub-sales">¥0</div></div>
   </div>
@@ -598,7 +600,29 @@ function showStaffStore(){
   } else {
     badge.style.display = 'none';
   }
+  applyStoreBoostNames(store);
   loadHistory();
+}
+
+// 店舗が判明したら強化商材①②③の名称を店舗マスターから自動表示（編集不可）
+function applyStoreBoostNames(store){
+  var b1 = document.getElementById('boost1-name');
+  var b2 = document.getElementById('boost2-name');
+  var b3 = document.getElementById('boost3-name');
+  if(!b1 || !b2 || !b3) return;
+
+  if(store && store !== '未設定'){
+    var mi = new Date().getMonth();
+    var master = getStoreBoostMaster(store, mi);
+    b1.value = master.b1.name || '';
+    b2.value = master.b2.name || '';
+    b3.value = master.b3.name || '';
+    b1.readOnly = true; b2.readOnly = true; b3.readOnly = true;
+    b1.style.opacity = '0.75'; b2.style.opacity = '0.75'; b3.style.opacity = '0.75';
+  } else {
+    b1.readOnly = false; b2.readOnly = false; b3.readOnly = false;
+    b1.style.opacity = '1'; b2.style.opacity = '1'; b3.style.opacity = '1';
+  }
 }
 
 // ════════════════════════════════════════
