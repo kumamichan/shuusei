@@ -488,9 +488,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbxCbai0PzU0BUi8L0E57ZDkQYgWYP9QEZQNoy5LPlhSMKZjVf-HJ67ViO5NnvV_qSC3zA/exec';
-// 全体ダッシュボード（幹部MTG用）専用GAS。別プロジェクトでデプロイしたURLを設定。
-var MTG_GAS_URL = 'https://script.google.com/macros/s/AKfycbyABBLkhg1W_GUk6ZP3eDu7DCIFQR4mYLHnnoYYKmVrBkXa1MIkcUrJSh8JjCgqobewqQ/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwjrHq2cdpDeJVAjhT8ZRtS3kTX5Qf1dqBTBQNFlFdDatFra_UrQhUr5r4pScL4v6gmmA/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -1941,8 +1939,8 @@ function loadDashboardData(){
   var contEl = document.getElementById('dash2-content');
   if(!contEl) return;
 
-  if(!MTG_GAS_URL||MTG_GAS_URL.indexOf('YOUR_GAS')!==-1){
-    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">⚠️ MTG_GAS_URLが未設定です</div>';
+  if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">⚠️ GAS_URLが未設定です</div>';
     return;
   }
 
@@ -1968,7 +1966,7 @@ function loadDashboardData(){
 
   var script = document.createElement('script');
   script.id = 'dash2-jsonp';
-  script.src = MTG_GAS_URL + '?action=mtg&callback=dash2Callback&t=' + Date.now();
+  script.src = GAS_URL + '?action=mtg&callback=dash2Callback&t=' + Date.now();
   script.onerror = function(e){
     clearTimeout(window._dash2Timeout);
     contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ スクリプト読み込みエラー（onerror発火）</div>';
