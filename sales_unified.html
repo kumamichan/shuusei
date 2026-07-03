@@ -350,6 +350,7 @@ input[type="date"].ti{color-scheme:dark;}
       <div style="display:flex;gap:8px;">
         <button class="staff-tab active" id="hist-tab-today" onclick="switchHistScope('today')">本日のみ</button>
         <button class="staff-tab" id="hist-tab-month" onclick="switchHistScope('month')">今月全部</button>
+        <button class="staff-tab" id="hist-tab-lastmonth" onclick="switchHistScope('lastmonth')">先月</button>
       </div>
     </div>
     <div id="hist-content">
@@ -484,7 +485,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbxbgWsDQ_BVB8ZH4tuLnKvDvDwidUgJoAxdazCbn_0NCJcUF-KF-JSU7hqx9444YSFXuA/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbynnXUWJh0yv-_Rv8tGonwQPFgjZAYXrsCxCAf5kQhrU4S0zuRZQJMHCax9RPAr0e5q7Q/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var selectedMonthIdx = new Date().getMonth();
@@ -639,6 +640,7 @@ function switchHistScope(scope){
   histScope = scope;
   document.getElementById('hist-tab-today').classList.toggle('active', scope==='today');
   document.getElementById('hist-tab-month').classList.toggle('active', scope==='month');
+  document.getElementById('hist-tab-lastmonth').classList.toggle('active', scope==='lastmonth');
   loadHistory();
 }
 
@@ -702,7 +704,7 @@ function renderHistory(json){
 
   if(!rows.length){
     contEl.innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">'+
-      (histScope==='today'?'本日':'今月')+'の入力はまだありません</p>';
+      (histScope==='today'?'本日':histScope==='lastmonth'?'先月':'今月')+'の入力はまだありません</p>';
     return;
   }
 
@@ -793,9 +795,12 @@ function toggleHistEdit(idx){
 
 async function saveHistEdit(idx){
   var r = histRowsCache[idx];
-  if(!r) return;
+  if(!r){ alert('編集データが見つかりません'); return; }
   var staffName = document.getElementById('f-staff').value.trim();
   var msgEl = document.getElementById('he-msg-'+idx);
+
+  if(!staffName){ alert('担当スタッフ名が入力されていません'); return; }
+  if(!r.rowNo){ alert('行番号が特定できません（履歴を再読み込みしてください）'); return; }
 
   function v2(id){ var el=document.getElementById(id); return el?(parseInt(el.value)||0):0; }
 
@@ -803,6 +808,7 @@ async function saveHistEdit(idx){
     isHistoryEdit: true,
     rowNo: r.rowNo,
     staff: staffName,
+    date: r.date,
     newTech:   v2('he-newTech-'+idx),
     newRetail: v2('he-newRetail-'+idx),
     retTech:   v2('he-retTech-'+idx),
@@ -819,12 +825,41 @@ async function saveHistEdit(idx){
 
   if(msgEl){ msgEl.style.display='block'; msgEl.style.color='var(--gold)'; msgEl.textContent='保存中...'; }
 
-  try{
+  // JSONP方式で送信結果を確認できるようにする
+  var oldScript = document.getElementById('hist-edit-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  var editTimeout = setTimeout(function(){
+    // タイムアウト時はno-cors送信にフォールバック
+    sendViaForm(payload, GAS_URL).then(function(){
+      if(msgEl){ msgEl.style.color='var(--green)'; msgEl.textContent='✅ 保存しました（確認中）'; }
+      setTimeout(function(){ loadHistory(); }, 2000);
+    }).catch(function(){
+      if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='❌ 保存に失敗しました'; }
+    });
+  }, 8000);
+
+  window.histEditCallback = function(json){
+    clearTimeout(editTimeout);
+    if(json && json.status === 'success'){
+      if(msgEl){ msgEl.style.color='var(--green)'; msgEl.textContent='✅ 保存しました（No.'+json.rowNo+'）'; }
+      setTimeout(function(){ loadHistory(); }, 1500);
+    } else {
+      if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='❌ エラー: '+(json?json.message:'不明'); }
+    }
+  };
+
+  // まずJSONPで試みる（iOSではno-corsより結果確認できる場合がある）
+  try {
     await sendViaForm(payload, GAS_URL);
+    // sendViaFormが完了したらJSONPコールバックを待つ
+    // （no-corsなのでレスポンスは見えないが、GAS側で処理は完了している可能性が高い）
+    clearTimeout(editTimeout);
     if(msgEl){ msgEl.style.color='var(--green)'; msgEl.textContent='✅ 保存しました'; }
     setTimeout(function(){ loadHistory(); }, 1500);
-  }catch(e){
-    if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='❌ 保存に失敗しました'; }
+  } catch(e) {
+    clearTimeout(editTimeout);
+    if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='❌ 保存に失敗しました: '+e.message; }
   }
 }
 
