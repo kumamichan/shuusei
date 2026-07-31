@@ -27,11 +27,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .hdr-date{font-family:'Syne',sans-serif;font-size:13px;color:var(--gold);font-weight:600;letter-spacing:1px;}
 
 /* TABS */
-.main-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;}
-.main-tabs-inner{max-width:980px;margin:0 auto;display:flex;gap:0;}
-.main-tab{padding:14px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:1px;white-space:nowrap;}
+.main-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0;}
+.main-tabs-inner{max-width:980px;margin:0 auto;display:flex;flex-direction:column;}
+.main-tabs-row{display:flex;gap:0;}
+.main-tab{flex:1;text-align:center;padding:13px 4px;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.5px;white-space:nowrap;}
 .main-tab:hover{color:var(--text);}
 .main-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.main-tabs-row:last-child .main-tab{border-top:1px solid var(--border);font-size:11px;padding:10px 4px;}
 
 /* MAIN */
 .main{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
@@ -58,7 +60,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .fg{display:flex;flex-direction:column;gap:6px;}
 .fl{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
 .fl .req{color:var(--gold);}
-.ti{width:100%;background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);outline:none;transition:all 0.18s;}
+.ti{width:100%;max-width:480px;background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);outline:none;transition:all 0.18s;}
 .ti::placeholder{color:var(--muted);opacity:0.45;}
 .ti:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,90,0.10);background:var(--card);}
 .ti.num{text-align:right;font-family:'Syne',sans-serif;font-weight:600;}
@@ -195,7 +197,8 @@ input[type="date"].ti{color-scheme:dark;}
 
 @media(max-width:640px){
   .ig2,.ig3,.ig4{grid-template-columns:1fr 1fr;}
-  .main-tab{padding:12px 12px;font-size:11px;}
+  .main-tab{padding:10px 12px;font-size:11px;}
+  .main-tabs-row:last-child .main-tab{padding:8px 12px;font-size:10px;}
   .card{padding:16px;}
   .total-grid{grid-template-columns:1fr 1fr;}
   .boost-row{grid-template-columns:1fr;}
@@ -220,11 +223,13 @@ input[type="date"].ti{color-scheme:dark;}
 <!-- メインタブ -->
 <div class="main-tabs">
   <div class="main-tabs-inner">
-    <div class="main-tab active" onclick="switchMainTab('tab-input',this)">📝 日次入力</div>
-    <div class="main-tab" onclick="switchMainTab('tab-progress',this)">📊 進捗ダッシュボード</div>
-    <div class="main-tab" onclick="switchMainTab('tab-dashboard',this)">🏢 全体ダッシュボード</div>
-    <div class="main-tab" onclick="switchMainTab('tab-target',this)">🎯 目標設定</div>
-    <div class="main-tab" onclick="switchMainTab('tab-yearly',this)">📈 年間推移</div>
+    <div class="main-tabs-row">
+      <div class="main-tab active" onclick="switchMainTab('tab-input',this)">📝 入力</div>
+      <div class="main-tab" onclick="switchMainTab('tab-progress',this)">📊 進捗</div>
+      <div class="main-tab" onclick="switchMainTab('tab-dashboard',this)">🏢 全体</div>
+      <div class="main-tab" onclick="switchMainTab('tab-target',this)">🎯 目標</div>
+      <div class="main-tab" onclick="switchMainTab('tab-yearly',this)">📈 年間</div>
+    </div>
   </div>
 </div>
 
@@ -237,21 +242,19 @@ input[type="date"].ti{color-scheme:dark;}
   <div class="card">
     <div class="card-head">
       <div class="card-icon gold">📅</div>
-      <div><div class="card-title">基本情報</div><div class="card-sub">来店日と担当スタッフ</div></div>
+      <div><div class="card-title">基本情報</div><div class="card-sub">来店日・担当スタッフ</div></div>
     </div>
-    <div class="ig ig2">
-      <div class="fg" id="fg-date">
-        <label class="fl">来店日<span class="req">*</span></label>
-        <input type="date" class="ti" id="f-date">
-        <div class="err-msg">来店日を入力してください</div>
-      </div>
-      <div class="fg" id="fg-staff">
-        <label class="fl">担当スタッフ<span class="req">*</span></label>
-        <input type="text" class="ti" id="f-staff" placeholder="例：田中" list="staff-list" oninput="showStaffStore()">
-        <datalist id="staff-list"></datalist>
-        <div id="f-staff-store-badge" style="margin-top:6px;font-size:11px;color:var(--gold);display:none;"></div>
-        <div class="err-msg">担当スタッフを入力してください</div>
-      </div>
+    <div class="fg" id="fg-date">
+      <label class="fl">来店日<span class="req">*</span></label>
+      <input type="date" class="ti" id="f-date">
+      <div class="err-msg">来店日を入力してください</div>
+    </div>
+    <div class="fg" id="fg-staff" style="margin-top:12px;">
+      <label class="fl">担当スタッフ<span class="req">*</span></label>
+      <input type="text" class="ti" id="f-staff" placeholder="例：田中" list="staff-list" oninput="showStaffStore()">
+      <datalist id="staff-list"></datalist>
+      <div id="f-staff-store-badge" style="margin-top:6px;font-size:11px;color:var(--gold);display:none;"></div>
+      <div class="err-msg">担当スタッフを入力してください</div>
     </div>
   </div>
 
@@ -259,17 +262,25 @@ input[type="date"].ti{color-scheme:dark;}
   <div class="card">
     <div class="card-head">
       <div class="card-icon gold">💰</div>
-      <div><div class="card-title">売上入力</div><div class="card-sub">新規客・既存客の技術売上と店販売上</div></div>
+      <div><div class="card-title">売上入力</div><div class="card-sub">売上を入力</div></div>
     </div>
     <div class="sec-lbl new-c" style="margin-bottom:10px;">🌱 新規客</div>
-    <div class="ig ig2" style="margin-bottom:16px;">
-      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num no-spin" id="f-new-tech" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num no-spin" id="f-new-retail" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label class="fl">技術売上</label>
+      <input type="number" class="ti num no-spin" id="f-new-tech" placeholder="0" min="0" oninput="calcAll()">
+    </div>
+    <div class="fg" style="margin-bottom:16px;">
+      <label class="fl">店販売上</label>
+      <input type="number" class="ti num no-spin" id="f-new-retail" placeholder="0" min="0" oninput="calcAll()">
     </div>
     <div class="sec-lbl ret-c" style="margin-bottom:10px;">🔁 既存客</div>
-    <div class="ig ig2" style="margin-bottom:12px;">
-      <div class="fg"><label class="fl">技術売上（円）</label><input type="number" class="ti num no-spin" id="f-ret-tech" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">店販売上（円）</label><input type="number" class="ti num no-spin" id="f-ret-retail" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label class="fl">技術売上</label>
+      <input type="number" class="ti num no-spin" id="f-ret-tech" placeholder="0" min="0" oninput="calcAll()">
+    </div>
+    <div class="fg" style="margin-bottom:12px;">
+      <label class="fl">店販売上</label>
+      <input type="number" class="ti num no-spin" id="f-ret-retail" placeholder="0" min="0" oninput="calcAll()">
     </div>
     <div class="subtotal"><div class="subtotal-label">本日売上合計</div><div class="subtotal-val" id="sub-sales">¥0</div></div>
   </div>
@@ -280,10 +291,17 @@ input[type="date"].ti{color-scheme:dark;}
       <div class="card-icon green">👥</div>
       <div><div class="card-title">客数入力</div></div>
     </div>
-    <div class="ig ig3">
-      <div class="fg"><label class="fl" style="color:var(--green);">🌱 新規客数</label><input type="number" class="ti num" id="f-new-cnt" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl" style="color:var(--blue);">🔁 既存客数</label><input type="number" class="ti num" id="f-ret-cnt" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">総客数</label><input type="number" class="ti num" id="f-total-cnt" placeholder="0" readonly style="opacity:0.6;"></div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label class="fl" style="color:var(--green);">🌱 新規客数</label>
+      <input type="number" class="ti num" id="f-new-cnt" placeholder="0" min="0" oninput="calcAll()">
+    </div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label class="fl" style="color:var(--blue);">🔁 既存客数</label>
+      <input type="number" class="ti num" id="f-ret-cnt" placeholder="0" min="0" oninput="calcAll()">
+    </div>
+    <div class="fg">
+      <label class="fl">総客数</label>
+      <input type="number" class="ti num" id="f-total-cnt" placeholder="0" readonly style="opacity:0.6;">
     </div>
   </div>
 
@@ -293,17 +311,15 @@ input[type="date"].ti{color-scheme:dark;}
       <div class="card-icon blue">✂</div>
       <div><div class="card-title">メニュー人数</div></div>
     </div>
-    <div class="ig ig2" style="margin-bottom:10px;">
-      <div class="fg"><label class="fl">✂ カット</label><input type="number" class="ti num" id="f-cut" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">🎨 カラー</label><input type="number" class="ti num" id="f-color" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">💫 パーマ</label><input type="number" class="ti num" id="f-perm" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">💈 縮毛（ストレート）</label><input type="number" class="ti num" id="f-straight" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">✨ トリートメント</label><input type="number" class="ti num" id="f-treat" placeholder="0" min="0" oninput="calcAll()"></div>
-      <div class="fg"><label class="fl">🛁 ヘッドスパ</label><input type="number" class="ti num" id="f-spa" placeholder="0" min="0" oninput="calcAll()"></div>
-    </div>
-    <div class="ig ig2">
-      <div></div>
-      <div class="fg"><label class="fl">メニュー合計</label><input type="number" class="ti num" id="f-menu-total" placeholder="0" readonly style="opacity:0.6;"></div>
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">✂ カット</label><input type="number" class="ti num" id="f-cut" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">🎨 カラー</label><input type="number" class="ti num" id="f-color" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">💫 パーマ</label><input type="number" class="ti num" id="f-perm" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">💈 縮毛/ストレート</label><input type="number" class="ti num" id="f-straight" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">✨ トリートメント</label><input type="number" class="ti num" id="f-treat" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg" style="margin-bottom:10px;"><label class="fl">🛁 ヘッドスパ</label><input type="number" class="ti num" id="f-spa" placeholder="0" min="0" oninput="calcAll()"></div>
+    <div class="fg">
+      <label class="fl">メニュー合計</label>
+      <input type="number" class="ti num" id="f-menu-total" placeholder="0" readonly style="opacity:0.6;">
     </div>
   </div>
 
@@ -448,22 +464,13 @@ input[type="date"].ti{color-scheme:dark;}
 <!-- ══════════ TAB4: 年間推移 ══════════ -->
 <div class="tab-content" id="tab-yearly">
 
-  <div class="card">
-    <div class="card-head"><div class="card-icon gold">📈</div><div><div class="card-title">年間 売上推移</div><div class="card-sub">実績 vs 目標 / 達成率（%）</div></div></div>
-    <div style="overflow-x:auto;">
-      <table class="yr-table" id="yr-sales-table"></table>
-    </div>
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div><div class="card-title">📈 年間推移</div><div class="card-sub" id="yr-updated">スプシからリアルタイム取得</div></div>
+    <button class="save-btn" onclick="loadYearlyData()">🔄 更新</button>
   </div>
-  <div class="card">
-    <div class="card-head"><div class="card-icon green">📈</div><div><div class="card-title">年間 客数推移</div><div class="card-sub">新規客数 / 既存客数 / 総客数</div></div></div>
-    <div style="overflow-x:auto;">
-      <table class="yr-table" id="yr-count-table"></table>
-    </div>
-  </div>
-  <!-- 棒グラフ -->
-  <div class="card">
-    <div class="card-head"><div class="card-icon gold">📊</div><div><div class="card-title">月別 売上グラフ</div></div></div>
-    <div class="chart-bar-wrap" id="yr-chart-bars"></div>
+
+  <div id="yr-content">
+    <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中...</div>
   </div>
 </div>
 
@@ -485,10 +492,10 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbynnXUWJh0yv-_Rv8tGonwQPFgjZAYXrsCxCAf5kQhrU4S0zuRZQJMHCax9RPAr0e5q7Q/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzmstLXfPf6ZsPUKm9Pcp0-RCFFlWcILME_yl0uW3z2oXbjNpFaW9OsCT8Jhom7O-dtDw/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-var selectedMonthIdx = new Date().getMonth();
+var targetMonthIdx = new Date().getMonth(); // 目標設定タブ専用（進捗ダッシュボードとは独立）
 
 // 目標項目定義
 var TGT_ITEMS = [
@@ -1319,11 +1326,11 @@ function renderTargetTab(){
   mtabs.innerHTML='';
   for(var i=0;i<12;i++){
     var btn = document.createElement('button');
-    btn.className='month-btn'+(i===selectedMonthIdx?' active':'');
+    btn.className='month-btn'+(i===targetMonthIdx?' active':'');
     btn.textContent=MONTHS[i];
     (function(mi){
       btn.onclick=function(){
-        selectedMonthIdx=mi;
+        targetMonthIdx=mi;
         var btns=document.querySelectorAll('.month-btn');
         for(var k=0;k<btns.length;k++) btns[k].classList.remove('active');
         this.classList.add('active');
@@ -1342,7 +1349,7 @@ function renderTargetTab(){
 function renderTargetTable(){
   var staffList = getStaffList();
   var tgts      = getTargets();
-  var mi        = selectedMonthIdx;
+  var mi        = targetMonthIdx;
   var month     = mi + 1;
   var table     = document.getElementById('tgt-table');
 
@@ -1538,7 +1545,7 @@ function refreshAllLandingDiffs(mi){
 
 function updateLandingAutoRows(sidxVal){
   var salesKeys=['newTech','newRetail','retTech','retRetail'];
-  var mi = selectedMonthIdx;
+  var mi = targetMonthIdx;
   var staffList = getStaffList();
   var nm = staffList[sidxVal];
   if(!nm) return;
@@ -1563,7 +1570,7 @@ function updateAllLandingAutoRows(){
 }
 
 async function saveLanding(){
-  var mi    = selectedMonthIdx;
+  var mi    = targetMonthIdx;
   var month = mi+1;
   var dateVal = document.getElementById('f-date').value || today();
   var year    = new Date(dateVal).getFullYear();
@@ -1702,7 +1709,7 @@ function getStoreBoostMaster(store, monthIdx){
 function renderBoostMaster(){
   var wrap = document.getElementById('boost-master-wrap');
   if(!wrap) return;
-  var mi = selectedMonthIdx;
+  var mi = targetMonthIdx;
 
   var html = '<div style="overflow-x:auto;"><table class="tgt-table"><thead><tr>';
   html += '<th style="min-width:70px;text-align:left;">店舗</th>';
@@ -1730,7 +1737,7 @@ function renderBoostMaster(){
 
 function saveBoostMaster(){
   var bm = getBoostMaster();
-  var mi = selectedMonthIdx;
+  var mi = targetMonthIdx;
 
   STORE_LIST.forEach(function(store){
     if(!bm[store]) bm[store] = [];
@@ -1821,7 +1828,7 @@ function renderBoostTargets(){
   var wrap = document.getElementById('boost-tgt-wrap');
   if(!wrap) return;
   var staffList = getStaffList();
-  var mi = selectedMonthIdx;
+  var mi = targetMonthIdx;
 
   if(!staffList.length){
     wrap.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:10px 0;">スタッフが登録されていません</p>';
@@ -1892,7 +1899,7 @@ function updateBoostAmount(inp){
 function saveBoostTargets(){
   var staffList = getStaffList();
   var bt = getBoostTargets();
-  var mi = selectedMonthIdx;
+  var mi = targetMonthIdx;
 
   for(var si=0; si<staffList.length; si++){
     var nm = staffList[si];
@@ -1952,7 +1959,7 @@ async function sendBoostTargetsToGAS(month){
 }
 
 function saveTargets(){
-  var staffList=getStaffList(); var tgts=getTargets(); var mi=selectedMonthIdx;
+  var staffList=getStaffList(); var tgts=getTargets(); var mi=targetMonthIdx;
   for(var si=0;si<staffList.length;si++){
     var name=staffList[si];
     if(!tgts[name]) tgts[name]=[];
@@ -2127,31 +2134,132 @@ function renameStaff(oldName,idx){
 // YEARLY TABLE
 // ════════════════════════════════════════
 function renderYearly(){
-  var yr = document.getElementById('yr-sales-table');
-  if(!yr) return;
-  yr.innerHTML='';
-  var headers=['月','売上目標','売上実績','達成率'];
-  var htr=document.createElement('tr');
-  for(var h=0;h<headers.length;h++){
-    var th=document.createElement('th'); th.textContent=headers[h]; htr.appendChild(th);
+  loadYearlyData();
+}
+
+function loadYearlyData(retryCount){
+  retryCount = retryCount || 0;
+  var contEl = document.getElementById('yr-content');
+  var updEl  = document.getElementById('yr-updated');
+  if(!contEl) return;
+  if(!GAS_URL || GAS_URL.indexOf('YOUR_GAS')!==-1){
+    contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">⚠️ GAS URLが未設定です</div>';
+    return;
   }
-  yr.appendChild(htr);
-  for(var mi=0;mi<12;mi++){
-    var month=mi+1;
-    var mk=new Date().getFullYear()+'-'+(month<10?'0':'')+month;
-    var tgt=getAllTarget(month);
-    var cum=getCumAll(mk);
-    var pct=tgt.sales>0?(cum.sales/tgt.sales*100).toFixed(1)+'%':'--';
-    var color=tgt.sales>0?(cum.sales/tgt.sales>=1?'var(--green)':cum.sales/tgt.sales>=0.8?'var(--gold)':'var(--red)'):'var(--muted)';
-    var tr=document.createElement('tr');
-    var cells=[MONTHS[mi], tgt.sales>0?fmtYen(tgt.sales):'--', fmtYen(cum.sales), pct];
-    for(var c=0;c<cells.length;c++){
-      var td=document.createElement('td'); td.textContent=cells[c];
-      if(c===3) td.style.color=color;
-      tr.appendChild(td);
+
+  contEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">データを取得中'+(retryCount>0?'（再試行'+retryCount+'/2）':'')+'...</div>';
+
+  var oldScript = document.getElementById('yr-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window._yrTimeout = setTimeout(function(){
+    if(retryCount < 2){ loadYearlyData(retryCount+1); }
+    else { contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ タイムアウト<br><button class="btn-rename" style="margin-top:8px;" onclick="loadYearlyData()">🔄 再試行</button></div>'; }
+  }, 8000);
+
+  window.yrCallback = function(json){
+    clearTimeout(window._yrTimeout);
+    if(!json || json.status!=='ok'){
+      contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ 取得エラー: '+(json?json.message:'不明')+'</div>';
+      return;
     }
-    yr.appendChild(tr);
+    if(updEl) updEl.textContent = '最終更新: '+(json.updatedAt||'--');
+    renderYearlyView(json);
+  };
+
+  var script = document.createElement('script');
+  script.id  = 'yr-jsonp';
+  script.src = GAS_URL + '?action=mtg&callback=yrCallback&t=' + Date.now();
+  script.onerror = function(){
+    clearTimeout(window._yrTimeout);
+    if(retryCount < 2){ loadYearlyData(retryCount+1); }
+    else { contEl.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;">❌ 取得失敗<br><button class="btn-rename" style="margin-top:8px;" onclick="loadYearlyData()">🔄 再試行</button></div>'; }
+  };
+  document.body.appendChild(script);
+}
+
+function renderYearlyView(d){
+  var contEl = document.getElementById('yr-content');
+  var now = new Date();
+  var thisMonth = now.getMonth()+1;
+  var html = '';
+
+  // 年間売上推移テーブル
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon gold">📈</div><div><div class="card-title">年間 売上推移</div><div class="card-sub">'+d.year+'年 実績 vs 目標 / 達成率</div></div></div>';
+  html += '<div style="overflow-x:auto;"><table class="yr-table"><thead><tr>';
+  html += '<th>月</th><th>売上目標</th><th>売上実績</th><th>差額</th><th>達成率</th>';
+  html += '</tr></thead><tbody>';
+
+  var totalSales=0, totalTarget=0;
+  for(var mi=0; mi<d.monthly.length; mi++){
+    var mv = d.monthly[mi];
+    var isCur = (mi+1) === thisMonth;
+    var pct = mv.target>0&&mv.sales>0 ? (mv.sales/mv.target*100) : null;
+    var pctStr = pct!==null ? pct.toFixed(1)+'%' : '--';
+    var pctC = pct!==null ? (pct>=100?'var(--green)':pct>=80?'var(--gold)':'var(--red)') : 'var(--muted)';
+    var diff = mv.target>0&&mv.sales>0 ? mv.sales-mv.target : null;
+    totalSales  += mv.sales;
+    totalTarget += mv.target;
+
+    html += '<tr'+(isCur?' style="background:rgba(200,164,90,0.06);"':'')+' >';
+    html += '<td style="font-weight:700;'+(isCur?'color:var(--gold2);':'')+'">'+mv.month+(isCur?' ◀':'')+'</td>';
+    html += '<td style="color:var(--blue);">'+(mv.target>0?fmtYen(mv.target):'--')+'</td>';
+    html += '<td style="color:var(--gold2);font-weight:700;">'+(mv.sales>0?fmtYen(mv.sales):'--')+'</td>';
+    html += '<td style="color:'+(diff!==null?(diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';\">'+(diff!==null?(diff>=0?'+':'')+fmtYen(diff):'--')+'</td>';
+    html += '<td class="pct-cell" style="color:'+pctC+';font-weight:700;">'+pctStr+'</td>';
+    html += '</tr>';
   }
+
+  // 合計行
+  var totPct = totalTarget>0 ? (totalSales/totalTarget*100).toFixed(1)+'%' : '--';
+  var totPctC = totalTarget>0 ? (totalSales/totalTarget>=1?'var(--green)':totalSales/totalTarget>=0.8?'var(--gold)':'var(--red)') : 'var(--muted)';
+  html += '<tr style="background:rgba(74,140,106,0.08);font-weight:700;">';
+  html += '<td>年間合計</td>';
+  html += '<td style="color:var(--blue);">'+(totalTarget>0?fmtYen(totalTarget):'--')+'</td>';
+  html += '<td style="color:var(--gold2);">'+fmtYen(totalSales)+'</td>';
+  var totDiff = totalTarget>0 ? totalSales-totalTarget : null;
+  html += '<td style="color:'+(totDiff!==null?(totDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';\">'+(totDiff!==null?(totDiff>=0?'+':'')+fmtYen(totDiff):'--')+'</td>';
+  html += '<td style="color:'+totPctC+';">'+totPct+'</td>';
+  html += '</tr>';
+  html += '</tbody></table></div></div>';
+
+  // 月別売上グラフ（シンプルなバー）
+  html += '<div class="card">';
+  html += '<div class="card-head"><div class="card-icon gold">📊</div><div><div class="card-title">月別 売上グラフ</div><div class="card-sub">実績（棒）vs 目標（ライン）</div></div></div>';
+  html += '<div style="padding:8px 0;">';
+
+  var maxVal = 0;
+  for(var mi2=0; mi2<d.monthly.length; mi2++){
+    maxVal = Math.max(maxVal, d.monthly[mi2].sales, d.monthly[mi2].target);
+  }
+  if(maxVal > 0){
+    for(var mi3=0; mi3<d.monthly.length; mi3++){
+      var mv3 = d.monthly[mi3];
+      var isCur3 = (mi3+1) === thisMonth;
+      var salesW = mv3.sales>0 ? (mv3.sales/maxVal*100) : 0;
+      var tgtW   = mv3.target>0 ? (mv3.target/maxVal*100) : 0;
+      var barC3  = mv3.target>0&&mv3.sales>0 ? (mv3.sales/mv3.target>=1?'var(--green)':mv3.sales/mv3.target>=0.8?'var(--gold)':'var(--red)') : 'var(--blue)';
+
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+      html += '<div style="width:28px;font-size:10px;color:'+(isCur3?'var(--gold2)':'var(--muted)')+';text-align:right;flex-shrink:0;">'+mv3.month+'</div>';
+      html += '<div style="flex:1;position:relative;">';
+      // 実績バー
+      html += '<div style="height:18px;background:var(--border);border-radius:3px;overflow:hidden;">';
+      html += '<div style="height:100%;width:'+salesW+'%;background:'+barC3+';border-radius:3px;"></div></div>';
+      // 目標ライン
+      if(tgtW>0){
+        html += '<div style="position:absolute;top:0;left:'+tgtW+'%;width:2px;height:18px;background:var(--blue);opacity:0.7;"></div>';
+      }
+      html += '</div>';
+      html += '<div style="width:80px;font-size:10px;color:'+(mv3.sales>0?'var(--text)':'var(--muted)')+';flex-shrink:0;">'+(mv3.sales>0?fmtYen(mv3.sales):'')+'</div>';
+      html += '</div>';
+    }
+    html += '<div style="font-size:10px;color:var(--muted);margin-top:6px;">■ 実績 ｜ <span style="color:var(--blue);">｜</span> 目標ライン</div>';
+  }
+  html += '</div></div>';
+
+  contEl.innerHTML = html;
 }
 
 // ════════════════════════════════════════
