@@ -42,7 +42,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
 /* CARD */
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 26px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 20px;margin-bottom:16px;box-sizing:border-box;}
 .card-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
 .card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
 .card-icon.gold{background:rgba(200,164,90,0.15);border:1px solid rgba(200,164,90,0.25);}
@@ -60,7 +60,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .fg{display:flex;flex-direction:column;gap:6px;}
 .fl{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
 .fl .req{color:var(--gold);}
-.ti{width:100%;max-width:480px;background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);outline:none;transition:all 0.18s;}
+.ti{width:100%;max-width:100%;box-sizing:border-box;background:var(--card2);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--text);outline:none;transition:all 0.18s;}
 .ti::placeholder{color:var(--muted);opacity:0.45;}
 .ti:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,164,90,0.10);background:var(--card);}
 .ti.num{text-align:right;font-family:'Syne',sans-serif;font-weight:600;}
@@ -158,12 +158,13 @@ input[type="date"].ti{color-scheme:dark;}
 .yr-table .section-head td{background:rgba(200,164,90,0.06);color:var(--gold);font-weight:700;font-size:10px;letter-spacing:2px;}
 
 /* TARGET INPUT TABLE */
-.tgt-table{width:100%;border-collapse:collapse;font-size:12px;}
+.tgt-table{width:100%;max-width:100%;border-collapse:collapse;font-size:12px;}
+.tgt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tgt-table th{background:var(--card2);color:var(--muted);padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:600;}
 .tgt-table th:first-child,.tgt-table th:nth-child(2){text-align:left;}
 .tgt-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
 .tgt-table tr:last-child td{border-bottom:none;}
-.tgt-table .tgt-input{width:100%;background:rgba(90,122,172,0.08);border:1px solid rgba(90,122,172,0.2);border-radius:6px;padding:6px 8px;font-family:'Syne',sans-serif;font-size:12px;color:var(--blue);text-align:right;outline:none;transition:all 0.15s;}
+.tgt-table .tgt-input{width:100%;box-sizing:border-box;background:rgba(90,122,172,0.08);border:1px solid rgba(90,122,172,0.2);border-radius:6px;padding:6px 8px;font-family:'Syne',sans-serif;font-size:12px;color:var(--blue);text-align:right;outline:none;transition:all 0.15s;}
 .lnd-input{width:100%;background:rgba(200,164,90,0.08);border:1px solid rgba(200,164,90,0.25);border-radius:6px;padding:6px 8px;font-family:'Syne',sans-serif;font-size:12px;color:var(--gold2);text-align:right;outline:none;transition:border-color 0.15s;}
 .lnd-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,164,90,0.15);}
 .lnd-input::placeholder{color:rgba(200,164,90,0.3);}
@@ -377,6 +378,15 @@ input[type="date"].ti{color-scheme:dark;}
 
 <!-- ══════════ TAB2: 進捗ダッシュボード ══════════ -->
 <div class="tab-content" id="tab-progress">
+  <!-- 全体KPI（スプシから取得） -->
+  <div class="card" id="prog-overall-kpi" style="display:none;">
+    <div class="card-head">
+      <div class="card-icon gold">📈</div>
+      <div><div class="card-title">全体 当月サマリー</div><div class="card-sub" id="prog-kpi-month"></div></div>
+    </div>
+    <div id="prog-kpi-content"></div>
+  </div>
+
   <div class="card">
     <div class="card-head">
       <div class="card-icon gold">📊</div>
@@ -389,23 +399,39 @@ input[type="date"].ti{color-scheme:dark;}
 
 <!-- ══════════ TAB3: 目標設定 ══════════ -->
 <div class="tab-content" id="tab-target">
+
+  <!-- 入力手順 -->
+  <div class="card" style="background:rgba(90,122,172,0.06);border:1px solid rgba(90,122,172,0.2);">
+    <div style="font-size:11px;color:var(--blue);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📋 目標設定の手順（月初めに1回）</div>
+    <div style="font-size:11px;color:var(--muted);line-height:2;">
+      <div>① スタッフ名を追加して店舗を選択</div>
+      <div>② 月ボタンで対象月を選択（例：7月）</div>
+      <div>③ 各スタッフの売上目標・客数目標を入力</div>
+      <div>④「💾 目標・着地見込みを保存＆送信」を押す</div>
+      <div>⑤ 強化商材マスター・個数目標も同様に保存</div>
+    </div>
+  </div>
+
+  <!-- 未入力アラート -->
+  <div id="target-alert-wrap"></div>
+
   <div class="card">
     <div class="card-head">
       <div class="card-icon blue">🎯</div>
       <div><div class="card-title">スタッフ別 月別目標設定</div><div class="card-sub">スタッフ名を入力して各月の目標を設定。全体目標は自動集計されます。</div></div>
     </div>
 
-    <!-- スタッフ管理 -->
+    <!-- スタッフ管理（縦一列） -->
     <div style="margin-bottom:16px;">
       <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">スタッフを追加</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <input type="text" class="ti" id="new-staff-name" placeholder="スタッフ名を入力" style="max-width:200px;">
-        <select class="ti" id="new-staff-store" style="max-width:140px;background:var(--card2);">
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;">
+        <input type="text" class="ti" id="new-staff-name" placeholder="スタッフ名を入力">
+        <select class="ti" id="new-staff-store" style="background:var(--card2);">
           <option value="oro">oro</option>
           <option value="mem">mem</option>
           <option value="plata">plata</option>
         </select>
-        <button class="save-btn" onclick="addStaffToTarget()">＋ 追加</button>
+        <button class="save-btn" onclick="addStaffToTarget()" style="width:100%;">＋ 追加</button>
       </div>
     </div>
     <!-- スタッフ一覧（修正・削除・店舗変更）-->
@@ -415,7 +441,7 @@ input[type="date"].ti{color-scheme:dark;}
     <div class="month-btn-wrap" id="month-tabs"></div>
 
     <!-- 目標テーブル -->
-    <div style="overflow-x:auto;">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
       <table class="tgt-table" id="tgt-table">
         <thead>
           <tr>
@@ -492,7 +518,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbxa-SJENlUQEryEpjeccqChvc3NwxhQgPGzGXlsLaadd5JVSf1bmg_yPTB1TeQCRRSFUA/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxukqKATx1qaSIjJCk_PhF_eomAFmM8nCaai6RIYlHyXA4r6djqZ2e8ajvNgu2xPTY0fQ/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var targetMonthIdx = new Date().getMonth(); // 目標設定タブ専用（進捗ダッシュボードとは独立）
@@ -1144,6 +1170,9 @@ function renderProgress(){
   var now = new Date();
   document.getElementById('dash-month-lbl').textContent = (now.getMonth()+1)+'月の個人目標との差異';
 
+  // 個人KPIをGASから取得（日次入力タブで入力した担当スタッフ名を使用）
+  var inputStaff = document.getElementById('f-staff') ? document.getElementById('f-staff').value.trim() : '';
+  loadProgressOverallKPI(inputStaff);
   if(!staffList.length){
     dashWrap.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">スタッフを登録すると進捗が表示されます</p>';
     return;
@@ -1162,6 +1191,7 @@ function renderProgress(){
         this.classList.add('active');
         progressActiveStaff = nm;
         loadStaffProgress(nm);
+        loadProgressOverallKPI(nm);
       };
     })(si,name);
     tabsWrap.appendChild(tab);
@@ -1314,14 +1344,130 @@ function renderProgressView(d){
     html += '</div>';
   }
 
+  // メニュー構成比率
+  if(d.menu && d.total>0){
+    var menuItems = [
+      {label:'カット',   val:d.menu.cut},
+      {label:'カラー',   val:d.menu.color},
+      {label:'パーマ',   val:d.menu.perm},
+      {label:'縮毛',     val:d.menu.straight},
+      {label:'トリート', val:d.menu.treat},
+      {label:'ヘッドスパ',val:d.menu.spa}
+    ];
+    html += '<div style="margin-top:10px;padding:12px;background:rgba(90,122,172,0.05);border-radius:10px;border:1px solid rgba(90,122,172,0.15);">';
+    html += '<div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;">✂ メニュー構成比率（総客数 '+d.total+'人）</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+    menuItems.forEach(function(mi){
+      var pct2 = d.total>0 ? Math.round(mi.val/d.total*100) : 0;
+      html += '<div style="background:var(--card2);border-radius:8px;padding:8px 10px;">';
+      html += '<div style="font-size:9px;color:var(--muted);margin-bottom:3px;">'+mi.label+'</div>';
+      html += '<div style="font-size:13px;font-weight:700;color:var(--blue);">'+pct2+'%</div>';
+      html += '<div style="font-size:9px;color:var(--muted);">'+mi.val+'人</div>';
+      html += '<div style="margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;">';
+      html += '<div style="height:100%;width:'+Math.min(pct2,100)+'%;background:var(--blue);border-radius:2px;"></div></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
   viewEl.innerHTML = html;
 }
 
 // ════════════════════════════════════════
 // TARGET TABLE (目標設定 + 着地見込み)
 // ════════════════════════════════════════
+function loadProgressOverallKPI(staffName){
+  var kpiCard = document.getElementById('prog-overall-kpi');
+  var kpiCont = document.getElementById('prog-kpi-content');
+  var kpiMonth = document.getElementById('prog-kpi-month');
+  if(!kpiCard || !kpiCont) return;
+  if(!staffName || !GAS_URL || GAS_URL.indexOf('YOUR_GAS')!==-1){
+    kpiCard.style.display = 'none';
+    return;
+  }
+
+  var oldScript = document.getElementById('prog-kpi-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window.progKpiCallback = function(json){
+    if(!json || json.status!=='ok') return;
+    var pct = json.target>0 ? Math.round(json.sales/json.target*1000)/10 : null;
+    var barC = pct!==null?(pct>=100?'var(--green)':pct>=80?'var(--gold)':'var(--red)'):'var(--muted)';
+    var diff = json.target>0 ? json.sales-json.target : null;
+
+    if(kpiMonth) kpiMonth.textContent = json.year+'年'+json.month+'月 / '+staffName;
+
+    var html = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;">';
+    html += '<div class="kpi-box"><div class="kpi-label">売上目標</div><div class="kpi-val" style="color:var(--blue);">'+(json.target>0?fmtYen(json.target):'未設定')+'</div></div>';
+    html += '<div class="kpi-box"><div class="kpi-label">売上実績</div><div class="kpi-val">'+fmtYen(json.sales)+'</div></div>';
+    html += '<div class="kpi-box"><div class="kpi-label">着地見込み</div><div class="kpi-val">'+(json.landing>0?fmtYen(json.landing):'--')+'</div></div>';
+    html += '<div class="kpi-box"><div class="kpi-label">達成率</div><div class="kpi-val" style="color:'+barC+';font-size:22px;">'+(pct!==null?pct+'%':'--')+'</div>';
+    if(diff!==null) html += '<div class="kpi-diff '+(diff>=0?'pos':'neg')+'">'+(diff>=0?'▲':'▼')+fmtYen(Math.abs(diff))+'</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">';
+    html += '<div style="height:100%;width:'+Math.min(pct||0,100)+'%;background:'+barC+';border-radius:4px;"></div></div>';
+
+    kpiCont.innerHTML = html;
+    kpiCard.style.display = 'block';
+  };
+
+  var script = document.createElement('script');
+  script.id = 'prog-kpi-jsonp';
+  script.src = GAS_URL + '?action=progress&staff=' + encodeURIComponent(staffName) + '&callback=progKpiCallback&t=' + Date.now();
+  document.body.appendChild(script);
+}
+
+function checkTargetAlert(){
+  var wrap = document.getElementById('target-alert-wrap');
+  if(!wrap) return;
+
+  // 日次入力タブで入力した担当スタッフ名を使用
+  var myName = document.getElementById('f-staff') ? document.getElementById('f-staff').value.trim() : '';
+
+  if(!myName){
+    // スタッフ名未入力なら全スタッフをチェック
+    var staffList = getStaffList();
+    var tgts = getTargets();
+    var mi = new Date().getMonth();
+    var missing = [];
+    for(var i=0; i<staffList.length; i++){
+      var nm = staffList[i];
+      var t = tgts[nm] && tgts[nm][mi] ? tgts[nm][mi] : null;
+      if(!t || !t.sales || t.sales === 0) missing.push(nm);
+    }
+    if(missing.length > 0){
+      wrap.innerHTML = '<div style="background:rgba(196,106,90,0.12);border:1px solid rgba(196,106,90,0.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 今月の目標が未入力のスタッフがいます</div>' +
+        '<div style="font-size:11px;color:var(--red);">'+missing.join('、')+'</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:6px;">↓ 下の目標設定テーブルから入力・保存してください</div>' +
+        '</div>';
+    } else if(staffList.length > 0){
+      wrap.innerHTML = '<div style="background:rgba(74,140,106,0.08);border:1px solid rgba(74,140,106,0.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--green);">✅ 全スタッフの今月の目標が入力済みです</div>';
+    } else {
+      wrap.innerHTML = '';
+    }
+    return;
+  }
+
+  // 自分の名前が特定できている場合は自分だけチェック
+  var tgts2 = getTargets();
+  var mi2 = new Date().getMonth();
+  var myTarget = tgts2[myName] && tgts2[myName][mi2] ? tgts2[myName][mi2] : null;
+
+  if(!myTarget || !myTarget.sales || myTarget.sales === 0){
+    wrap.innerHTML = '<div style="background:rgba(196,106,90,0.12);border:1px solid rgba(196,106,90,0.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px;">⚠️ '+myName+'さんの今月の売上目標が未入力です</div>' +
+      '<div style="font-size:10px;color:var(--muted);">↓ 下の目標設定テーブルから入力・保存してください</div>' +
+      '</div>';
+  } else {
+    wrap.innerHTML = '<div style="background:rgba(74,140,106,0.08);border:1px solid rgba(74,140,106,0.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--green);">✅ '+myName+'さんの今月の目標が入力済みです（¥'+myTarget.sales.toLocaleString()+'）</div>';
+  }
+}
+
 function renderTargetTab(){
   renderStaffManageList();
+  checkTargetAlert(); // 未入力アラート
   var mtabs = document.getElementById('month-tabs');
   mtabs.innerHTML='';
   for(var i=0;i<12;i++){
@@ -2333,16 +2479,46 @@ function renderDashboard(d){
   var salesPct = s.target>0 ? Math.round(s.sales/s.target*1000)/10 : 0;
   var html = '';
 
-  // KPIカード
-  html += '<div class="total-grid" style="margin-bottom:16px;">';
-  html += '<div class="total-item"><div class="total-item-label">売上合計</div><div class="total-item-val">'+dFmtYen(s.sales)+'</div><div class="total-item-sub">目標 '+dFmtYen(s.target)+'</div></div>';
+  // KPIカード（売上合計・着地見込みの2枚）
   var landingDiff = s.target>0 ? s.landing-s.target : null;
   var landingPct  = s.target>0 ? Math.round(s.landing/s.target*1000)/10 : null;
-  html += '<div class="total-item"><div class="total-item-label">着地見込み</div><div class="total-item-val">'+(s.landing>0?dFmtYen(s.landing):'--')+'</div>';
-  html += '<div class="total-item-sub" style="color:'+(landingDiff!==null?(landingDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';font-weight:700;">'+
-          (landingDiff!==null?(landingDiff>=0?'+':'')+dFmtYen(landingDiff)+'（'+landingPct+'%）':'目標未設定')+'</div></div>';
-  html += '<div class="total-item"><div class="total-item-label">新規客数</div><div class="total-item-val">'+dFmtNum(s.newCount)+'人</div><div class="total-item-sub">既存 '+dFmtNum(s.retCount)+'人</div></div>';
-  html += '<div class="total-item"><div class="total-item-label">総客数</div><div class="total-item-val">'+dFmtNum(s.total)+'人</div><div class="total-item-sub">'+d.month+'月累計</div></div>';
+  var salesBarW = s.target>0 ? Math.min(salesPct,100) : 0;
+  var salesBarC = salesPct>=100?'var(--green)':salesPct>=80?'var(--gold)':'var(--red)';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
+
+  // 売上合計カード（実績・目標・達成率を含む）
+  html += '<div class="total-item" style="padding:16px;">';
+  html += '<div class="total-item-label">売上合計</div>';
+  html += '<div class="total-item-val">'+dFmtYen(s.sales)+'</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">目標 <span style="color:var(--blue);font-weight:700;">'+dFmtYen(s.target)+'</span></div>';
+  html += '<div style="margin-top:8px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
+  html += '<div style="height:100%;width:'+salesBarW+'%;background:'+salesBarC+';border-radius:3px;"></div></div>';
+  html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;">';
+  html += '<span style="color:'+salesBarC+';font-weight:800;font-size:16px;">'+(s.target>0?salesPct+'%':'--')+'</span>';
+  html += '<span style="color:'+(s.target>0?(s.sales-s.target>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(s.target>0?(s.sales-s.target>=0?'+':'')+dFmtYen(s.sales-s.target):'--')+'</span>';
+  html += '</div></div>';
+
+  // 着地見込みカード
+  html += '<div class="total-item" style="padding:16px;">';
+  html += '<div class="total-item-label">着地見込み</div>';
+  html += '<div class="total-item-val">'+(s.landing>0?dFmtYen(s.landing):'--')+'</div>';
+  html += '<div style="font-size:11px;margin-top:4px;color:'+(landingDiff!==null?(landingDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';font-weight:700;">'+
+          (landingDiff!==null?(landingDiff>=0?'+':'')+dFmtYen(landingDiff)+'（'+landingPct+'%）':'目標未設定')+'</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // 実績合計・達成率（2枚目の行）
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
+  html += '<div class="total-item" style="padding:16px;">';
+  html += '<div class="total-item-label">売上実績合計</div>';
+  html += '<div class="total-item-val">'+dFmtYen(s.sales)+'</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">'+d.month+'月 入力分合計</div>';
+  html += '</div>';
+  html += '<div class="total-item" style="padding:16px;">';
+  html += '<div class="total-item-label">目標達成率</div>';
+  html += '<div class="total-item-val" style="color:'+(s.target>0?salesBarC:'var(--muted)')+';font-size:28px;">'+(s.target>0?salesPct+'%':'--')+'</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">目標 '+dFmtYen(s.target)+'</div>';
+  html += '</div>';
   html += '</div>';
 
   // 店舗別合計
@@ -2380,102 +2556,94 @@ function renderDashboard(d){
       // 店舗KPIカード
       html += '<div style="background:var(--card2);border-radius:12px;padding:14px 16px;margin-bottom:8px;border-left:4px solid '+sgBarC+';">';
       html += '<div style="font-family:Syne,sans-serif;font-size:15px;font-weight:800;margin-bottom:10px;">'+sg.store+'</div>';
-      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">';
+      // 1行目：売上目標・実績・差額・達成率
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;margin-bottom:10px;">';
       html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">売上目標</div><div style="font-size:12px;font-weight:700;color:var(--blue);">'+(sg.target>0?dFmtYen(sg.target):'未設定')+'</div></div>';
       html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">売上実績</div><div style="font-size:12px;font-weight:700;color:var(--gold2);">'+dFmtYen(sg.sales)+'</div></div>';
       html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">差額</div><div style="font-size:12px;font-weight:700;color:'+(sg.diff!==null?(sg.diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">' + sgDiffStr + '</div></div>';
       html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:4px;">達成率</div><div style="font-size:16px;font-weight:800;color:'+sgBarC+';">'+(sg.target>0?sg.pct+'%':'--')+'</div></div>';
       html += '</div>';
-      html += '<div style="margin-top:10px;height:10px;background:var(--border);border-radius:5px;overflow:hidden;">';
-      html += '<div style="height:100%;width:'+(sgPct*100)+'%;background:'+sgBarC+';border-radius:5px;"></div></div>';
+      // 進捗バー
+      html += '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;">';
+      html += '<div style="height:100%;width:'+(sgPct*100)+'%;background:'+sgBarC+';border-radius:4px;"></div></div>';
+      // 2行目：内訳（新規技術・新規店販・既存技術・既存店販）
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;padding-top:8px;border-top:1px solid var(--border);">';
+      var breakdowns=[{label:'新規技術',val:sg.newTech||0},{label:'新規店販',val:sg.newRetail||0},{label:'既存技術',val:sg.retTech||0},{label:'既存店販',val:sg.retRetail||0}];
+      breakdowns.forEach(function(bd){
+        html += '<div><div style="font-size:9px;color:var(--muted);margin-bottom:3px;">'+bd.label+'</div>';
+        html += '<div style="font-size:11px;font-weight:700;">'+dFmtYen(bd.val)+'</div></div>';
+      });
+      html += '</div>';
       html += '</div>';
 
       // スタッフ一覧
       if(sg.staff && sg.staff.length){
-        html += '<div style="overflow-x:auto;"><table class="yr-table">';
-        html += '<tr><th style="text-align:left;">担当</th><th>目標</th><th>実績</th><th>着地</th><th>差額</th><th>達成率</th></tr>';
         for(var si2=0; si2<sg.staff.length; si2++){
           var stf2 = sg.staff[si2];
           var sc2 = stf2.pct>=100?'var(--green)':stf2.pct>=80?'var(--gold)':'var(--red)';
-          html += '<tr>';
-          html += '<td style="text-align:left;font-weight:700;">'+stf2.name+'</td>';
-          html += '<td style="color:var(--blue);">'+(stf2.target>0?dFmtYen(stf2.target):'--')+'</td>';
-          html += '<td style="color:var(--gold2);font-weight:700;">'+dFmtYen(stf2.sales)+'</td>';
-          html += '<td>'+(stf2.landing>0?dFmtYen(stf2.landing):'--')+'</td>';
-          html += '<td style="color:'+(stf2.diff!==null?(stf2.diff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(stf2.diff!==null?(stf2.diff>=0?'+':'')+dFmtYen(stf2.diff):'--')+'</td>';
-          html += '<td style="font-weight:800;color:'+(stf2.target>0?sc2:'var(--muted)')+';">'+(stf2.target>0?stf2.pct+'%':'--')+'</td>';
-          html += '</tr>';
+          var barW2 = stf2.target>0?Math.min(stf2.pct,100):0;
+          html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">';
+          html += '<div style="font-weight:800;font-size:13px;">'+stf2.name+'</div>';
+          html += '<div style="display:flex;gap:10px;font-size:11px;flex-wrap:wrap;">';
+          html += '<span>目標 <strong style="color:var(--blue);">'+(stf2.target>0?dFmtYen(stf2.target):'--')+'</strong></span>';
+          html += '<span>実績 <strong style="color:var(--gold2);">'+dFmtYen(stf2.sales)+'</strong></span>';
+          html += '<span>着地 <strong>'+(stf2.landing>0?dFmtYen(stf2.landing):'--')+'</strong></span>';
+          html += '<span style="color:'+sc2+';font-weight:800;">'+(stf2.target>0?stf2.pct+'%':'--')+'</span>';
+          if(stf2.diff!==null) html += '<span style="color:'+(stf2.diff>=0?'var(--green)':'var(--red)')+';font-size:10px;">'+(stf2.diff>=0?'+':'')+dFmtYen(stf2.diff)+'</span>';
+          html += '</div></div>';
+          html += '<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;">';
+          html += '<div style="height:100%;width:'+barW2+'%;background:'+sc2+';border-radius:3px;"></div></div>';
+          var details2 = [
+            {label:'新規技術', act:stf2.newTech||0,   tgt:stf2.tgtNewTech||0},
+            {label:'新規店販', act:stf2.newRetail||0, tgt:stf2.tgtNewRetail||0},
+            {label:'既存技術', act:stf2.retTech||0,   tgt:stf2.tgtRetTech||0},
+            {label:'既存店販', act:stf2.retRetail||0, tgt:stf2.tgtRetRetail||0}
+          ];
+          html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
+          details2.forEach(function(dt){
+            var dp = dt.tgt>0 ? Math.round(dt.act/dt.tgt*1000)/10 : null;
+            var dc = dp!==null?(dp>=100?'var(--green)':dp>=80?'var(--gold)':'var(--red)'):'var(--muted)';
+            html += '<div style="background:var(--card2);border-radius:6px;padding:6px 8px;">';
+            html += '<div style="font-size:9px;color:var(--muted);margin-bottom:3px;">'+dt.label+'</div>';
+            html += '<div style="font-size:11px;font-weight:700;color:var(--gold2);">'+dFmtYen(dt.act)+'</div>';
+            html += '<div style="font-size:9px;color:var(--blue);">目標 '+(dt.tgt>0?dFmtYen(dt.tgt):'--')+'</div>';
+            if(dp!==null) html += '<div style="font-size:10px;font-weight:700;color:'+dc+';">'+dp+'%</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+
+          // 強化商材進捗
+          if(stf2.boost || (stf2.tgtNewTech!==undefined)){
+            var bLabels = ['商材①','商材②','商材③'];
+            var bActKeys = ['b1Act','b2Act','b3Act'];
+            // boostデータはstf2.boostから取得（あれば）
+            if(stf2.boost){
+              html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">';
+              html += '<div style="font-size:9px;color:var(--muted);margin-bottom:6px;">🌟 強化商材</div>';
+              html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+              ['b1','b2','b3'].forEach(function(bk,bidx){
+                var b = stf2.boost[bk] || {actualCount:0,tgtCount:0,price:0};
+                var bp = b.tgtCount>0 ? Math.round(b.actualCount/b.tgtCount*100) : null;
+                var bc3 = bp!==null?(bp>=100?'var(--green)':bp>=80?'var(--gold)':'var(--red)'):'var(--muted)';
+                html += '<div style="background:var(--card2);border-radius:6px;padding:6px 8px;">';
+                html += '<div style="font-size:9px;color:var(--muted);">商材'+(bidx+1)+'</div>';
+                html += '<div style="font-size:11px;font-weight:700;">'+b.actualCount+'個</div>';
+                html += '<div style="font-size:9px;color:var(--blue);">目標'+b.tgtCount+'個</div>';
+                if(bp!==null) html += '<div style="font-size:10px;font-weight:700;color:'+bc3+';">'+bp+'%</div>';
+                html += '</div>';
+              });
+              html += '</div></div>';
+            }
+          }
+
+          html += '</div>';
         }
-        html += '</table></div>';
-      } else {
-        html += '<p style="color:var(--muted);font-size:11px;padding:8px 0;">スタッフ未登録</p>';
       }
       html += '</div>';
     }
     html += '</div>';
   }
-
-  // スタッフ別テーブル（強化商材進捗付き）
-  html += '<div class="card">';
-  html += '<div class="card-head"><div class="card-icon gold">👤</div><div><div class="card-title">スタッフ別 当月進捗</div><div class="card-sub">'+d.year+'年'+d.month+'月 / 売上＋強化商材</div></div></div>';
-
-  var totalSales=0,totalTarget=0,totalLanding=0,totalNC=0,totalRC=0,totalTC=0;
-  for(var i=0;i<d.staff.length;i++){
-    var stf=d.staff[i];
-    var pct = stf.target>0?Math.round(stf.sales/stf.target*1000)/10:0;
-    var diff = stf.target>0?stf.sales-stf.target:null;
-    var barW = stf.target>0?Math.min(pct,100):0;
-    var barC2 = pct>=100?'var(--green)':pct>=80?'var(--gold)':'var(--red)';
-    totalSales+=stf.sales; totalTarget+=stf.target; totalLanding+=stf.landing;
-    totalNC+=stf.newCount; totalRC+=stf.retCount; totalTC+=stf.total;
-
-    html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">';
-    html += '<div style="font-weight:800;font-size:13px;">'+stf.name+'</div>';
-    html += '<div style="display:flex;gap:12px;font-size:12px;flex-wrap:wrap;">';
-    html += '<span>目標 <strong style="color:var(--blue);">'+(stf.target>0?dFmtYen(stf.target):'未設定')+'</strong></span>';
-    html += '<span>実績 <strong style="color:var(--gold2);">'+dFmtYen(stf.sales)+'</strong></span>';
-    html += '<span>着地 <strong>'+(stf.landing>0?dFmtYen(stf.landing):'--')+'</strong></span>';
-    html += '<span style="color:'+barC2+';font-weight:800;font-size:14px;">'+(stf.target>0?pct+'%':'--')+'</span>';
-    if(diff!==null) html += '<span style="color:'+(diff>=0?'var(--green)':'var(--red)')+';font-size:11px;">'+(diff>=0?'+':'')+dFmtYen(diff)+'</span>';
-    html += '</div></div>';
-    html += '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;">';
-    html += '<div style="height:100%;width:'+barW+'%;background:'+barC2+';border-radius:4px;"></div></div>';
-
-    if(stf.boost){
-      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
-      ['b1','b2','b3'].forEach(function(bk,bidx){
-        var b = stf.boost[bk];
-        var bPct = b.tgtCount>0 ? Math.min(b.actualCount/b.tgtCount,1) : 0;
-        var bPctLabel = b.tgtCount>0 ? (b.actualCount/b.tgtCount*100).toFixed(0)+'%' : '--';
-        var bBarC = bPct>=1?'var(--green)':bPct>=0.8?'var(--gold)':'var(--red)';
-        html += '<div style="background:var(--card2);border-radius:8px;padding:8px 10px;">';
-        html += '<div style="font-size:9px;color:var(--muted);margin-bottom:4px;">商材'+(bidx+1)+'</div>';
-        html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">';
-        html += '<span style="font-weight:700;">'+b.actualCount+'個</span>';
-        html += '<span style="color:'+bBarC+';font-weight:700;">'+bPctLabel+'</span>';
-        html += '</div>';
-        html += '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">';
-        html += '<div style="height:100%;width:'+(bPct*100)+'%;background:'+bBarC+';"></div></div>';
-        html += '<div style="font-size:9px;color:var(--muted);margin-top:3px;">目標'+b.tgtCount+'個</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-    html += '</div>';
-  }
-
-  var totPct = totalTarget>0?Math.round(totalSales/totalTarget*1000)/10:0;
-  var totDiff = totalTarget>0?totalSales-totalTarget:null;
-  html += '<div style="background:rgba(74,140,106,0.08);border-radius:8px;padding:10px 14px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-weight:700;">';
-  html += '<span>合計</span>';
-  html += '<span>目標 <span style="color:var(--blue);">'+(totalTarget>0?dFmtYen(totalTarget):'--')+'</span></span>';
-  html += '<span>実績 <span style="color:var(--gold2);">'+dFmtYen(totalSales)+'</span></span>';
-  html += '<span>差額 <span style="color:'+(totDiff!==null?(totDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(totDiff!==null?(totDiff>=0?'+':'')+dFmtYen(totDiff):'--')+'</span></span>';
-  html += '<span style="color:'+(totalTarget>0?dPctColor(totPct):'var(--muted)')+';font-size:14px;">'+(totalTarget>0?totPct+'%':'--')+'</span>';
-  html += '</div>';
-  html += '</div>';
-
 
   // 強化商材 店舗別実績
   if(d.boost && d.boost.length){
@@ -2494,31 +2662,6 @@ function renderDashboard(d){
     }
     html += '</table></div></div>';
   }
-
-  // 年間推移テーブル
-  html += '<div class="card">';
-  html += '<div class="card-head"><div class="card-icon green">📈</div><div><div class="card-title">年間 月別推移</div><div class="card-sub">'+d.year+'年</div></div></div>';
-  html += '<div style="overflow-x:auto;"><table class="yr-table"><tr><th>項目</th>';
-  for(var mi=0;mi<d.monthly.length;mi++){
-    html += '<th'+(d.monthly[mi].month===(d.month+'月')?' style="color:var(--gold2);"':'')+'>'+d.monthly[mi].month+'</th>';
-  }
-  html += '</tr><tr><td>売上実績</td>';
-  for(var mi=0;mi<d.monthly.length;mi++){
-    var mv=d.monthly[mi]; var isCur=mv.month===(d.month+'月');
-    html += '<td'+(isCur?' style="color:var(--gold2);font-weight:700;"':'')+'>'+(mv.sales>0?dFmtYen(mv.sales):'--')+'</td>';
-  }
-  html += '</tr><tr><td>売上目標</td>';
-  for(var mi=0;mi<d.monthly.length;mi++){
-    var mv=d.monthly[mi];
-    html += '<td style="color:var(--blue);">'+(mv.target>0?dFmtYen(mv.target):'--')+'</td>';
-  }
-  html += '</tr><tr><td>達成率</td>';
-  for(var mi=0;mi<d.monthly.length;mi++){
-    var mv=d.monthly[mi];
-    var pp = mv.target>0&&mv.sales>0?Math.round(mv.sales/mv.target*1000)/10:null;
-    html += '<td class="pct-cell" style="color:'+(pp!==null?dPctColor(pp):'var(--muted)')+';">'+(pp!==null?pp+'%':'--')+'</td>';
-  }
-  html += '</tr></table></div></div>';
 
   document.getElementById('dash2-content').innerHTML = html;
 }
