@@ -518,7 +518,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbyyfbc8OLcRsWDsdOMcnf3UmDYaMV3bu_ZwM-I2zZ5EmbRedyIyHC5Yzp9gbSwGhYp66g/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwCU70NeU57Sdg7aWlcI3tU5Lnt9impTtVqSRPDzgeBdM5FoNVlL6veCGEVrQR3NCdYgA/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var targetMonthIdx = new Date().getMonth(); // 目標設定タブ専用（進捗ダッシュボードとは独立）
@@ -1491,7 +1491,7 @@ function checkTargetAlert(){
         '<div style="font-size:10px;color:var(--muted);margin-top:6px;">↓ 下の目標設定テーブルから入力・保存してください</div>' +
         '</div>';
     } else if(staffList.length > 0){
-      wrap.innerHTML = '<div style="background:rgba(74,140,106,0.08);border:1px solid rgba(74,140,106,0.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--green);">✅ 全スタッフの今月の目標が入力済みです</div>';
+      wrap.innerHTML = '<div style="background:rgba(74,140,106,0.08);border:1px solid rgba(74,140,106,0.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--green);">✅ 今月の目標が入力済みです</div>';
     } else {
       wrap.innerHTML = '';
     }
@@ -2547,13 +2547,20 @@ function renderDashboard(d){
   html += '<span style="color:'+(s.target>0?(s.sales-s.target>=0?'var(--green)':'var(--red)'):'var(--muted)')+';">'+(s.target>0?(s.sales-s.target>=0?'+':'')+dFmtYen(s.sales-s.target):'--')+'</span>';
   html += '</div></div>';
 
-  // 着地見込みカード
+  // 着地見込みカード（売上合計と同じ形式）
+  var landingPct2 = s.target>0 ? Math.round(s.landing/s.target*1000)/10 : null;
+  var landingBarC = landingPct2!==null?(landingPct2>=100?'var(--green)':landingPct2>=80?'var(--gold)':'var(--red)'):'var(--muted)';
+  var landingBarW = landingPct2!==null ? Math.min(landingPct2,100) : 0;
   html += '<div class="total-item" style="padding:16px;">';
   html += '<div class="total-item-label">着地見込み</div>';
   html += '<div class="total-item-val">'+(s.landing>0?dFmtYen(s.landing):'--')+'</div>';
-  html += '<div style="font-size:11px;margin-top:4px;color:'+(landingDiff!==null?(landingDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';font-weight:700;">'+
-          (landingDiff!==null?(landingDiff>=0?'+':'')+dFmtYen(landingDiff)+'（'+landingPct+'%）':'目標未設定')+'</div>';
-  html += '</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">目標 <span style="color:var(--blue);font-weight:700;">'+(s.target>0?dFmtYen(s.target):'未設定')+'</span></div>';
+  html += '<div style="margin-top:8px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
+  html += '<div style="height:100%;width:'+landingBarW+'%;background:'+landingBarC+';border-radius:3px;"></div></div>';
+  html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;">';
+  html += '<span style="color:'+landingBarC+';font-weight:800;font-size:16px;">'+(landingPct2!==null?landingPct2+'%':'--')+'</span>';
+  html += '<span style="color:'+(landingDiff!==null?(landingDiff>=0?'var(--green)':'var(--red)'):'var(--muted)')+';font-size:11px;">'+(landingDiff!==null?(landingDiff>=0?'+':'')+dFmtYen(landingDiff):'--')+'</span>';
+  html += '</div></div>';
   html += '</div>';
 
   // 実績合計・達成率（2枚目の行）
@@ -2733,18 +2740,34 @@ function renderDashboard(d){
   if(d.boost && d.boost.length){
     html += '<div class="card">';
     html += '<div class="card-head"><div class="card-icon purple">🌟</div><div><div class="card-title">強化商材 店舗別 当月実績</div></div></div>';
-    html += '<div style="overflow-x:auto;"><table class="yr-table" style="min-width:680px;"><tr><th>店舗</th><th>商材①</th><th>実績①</th><th>商材②</th><th>実績②</th><th>商材③</th><th>実績③</th></tr>';
-    for(var bsi=0;bsi<d.boost.length;bsi++){
-      var bs=d.boost[bsi];
-      html += '<tr><td style="text-align:left;font-weight:800;">'+bs.store+'</td>';
-      ['b1','b2','b3'].forEach(function(bk){
-        var b=bs[bk];
-        html += '<td style="text-align:left;font-size:11px;">'+(b.name||'未設定')+(b.price>0?'<br><span style="color:var(--muted);font-size:10px;">単価'+dFmtYen(b.price)+'</span>':'')+'</td>';
-        html += '<td>'+b.actualCount+'個<br><span style="color:var(--gold2);font-size:11px;">'+dFmtYen(b.actualAmount)+'</span></td>';
+
+    for(var bsi=0; bsi<d.boost.length; bsi++){
+      var bs = d.boost[bsi];
+      html += '<div style="margin-bottom:14px;">';
+      html += '<div style="font-family:Syne,sans-serif;font-size:13px;font-weight:800;margin-bottom:8px;color:var(--gold);">'+bs.store+'</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+
+      ['b1','b2','b3'].forEach(function(bk, bidx){
+        var b = bs[bk];
+        var tgtAmt = (b.price||0) * (b.tgtCount||0);
+        var actAmt = b.actualAmount || 0;
+        var pct2 = tgtAmt>0 ? Math.round(actAmt/tgtAmt*100) : null;
+        var barC2 = pct2!==null?(pct2>=100?'var(--green)':pct2>=80?'var(--gold)':'var(--red)'):'var(--muted)';
+        var barW2 = pct2!==null ? Math.min(pct2,100) : 0;
+
+        html += '<div style="background:var(--card2);border-radius:8px;padding:10px;">';
+        html += '<div style="font-size:9px;color:var(--muted);margin-bottom:4px;">商材'+(bidx+1)+(b.name?' ('+b.name+')':'')+'</div>';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--gold2);">'+dFmtYen(actAmt)+'</div>';
+        html += '<div style="font-size:9px;color:var(--blue);margin-top:2px;">目標 '+dFmtYen(tgtAmt)+'</div>';
+        html += '<div style="margin-top:5px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">';
+        html += '<div style="height:100%;width:'+barW2+'%;background:'+barC2+';border-radius:2px;"></div></div>';
+        html += '<div style="font-size:11px;font-weight:700;color:'+barC2+';margin-top:3px;">'+(pct2!==null?pct2+'%':'--')+'</div>';
+        html += '</div>';
       });
-      html += '</tr>';
+
+      html += '</div></div>';
     }
-    html += '</table></div></div>';
+    html += '</div>';
   }
 
   document.getElementById('dash2-content').innerHTML = html;
