@@ -518,7 +518,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbwrJm2L5t7gXHHYO0ALj5BpS4u6MihZvzvs1T5S42wjCE58HtFL2YC4i6X_wTb2fFLIng/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyyfbc8OLcRsWDsdOMcnf3UmDYaMV3bu_ZwM-I2zZ5EmbRedyIyHC5Yzp9gbSwGhYp66g/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var targetMonthIdx = new Date().getMonth(); // 目標設定タブ専用（進捗ダッシュボードとは独立）
@@ -632,33 +632,60 @@ function showStaffStore(){
   loadHistory();
 }
 
-// 商材①②は店舗マスターから、商材③はスタッフ個人設定から自動表示（編集不可）
+// 商材①②はGASから店舗マスターをリアルタイム取得して自動表示
 function applyStoreBoostNames(store, staffName){
   var b1 = document.getElementById('boost1-name');
   var b2 = document.getElementById('boost2-name');
   var b3 = document.getElementById('boost3-name');
   if(!b1 || !b2 || !b3) return;
 
-  if(store && store !== '未設定'){
-    var mi = new Date().getMonth();
-    var master = getStoreBoostMaster(store, mi);
-    b1.value = master.b1.name || '';
-    b2.value = master.b2.name || '';
-    b1.readOnly = true; b2.readOnly = true;
-    b1.style.opacity = '0.75'; b2.style.opacity = '0.75';
-  } else {
+  if(!store || store === '未設定'){
     b1.readOnly = false; b2.readOnly = false;
     b1.style.opacity = '1'; b2.style.opacity = '1';
+    b3.readOnly = false; b3.style.opacity = '1';
+    return;
   }
 
-  // 商材③：スタッフ個人が事前に設定した商材名があれば自動表示（編集は可能なまま、消すのは任意）
+  // ローカルキャッシュを先に表示（即時）
+  var mi = new Date().getMonth();
+  var localMaster = getStoreBoostMaster(store, mi);
+  if(localMaster.b1.name) b1.value = localMaster.b1.name;
+  if(localMaster.b2.name) b2.value = localMaster.b2.name;
+  b1.readOnly = true; b2.readOnly = true;
+  b1.style.opacity = '0.75'; b2.style.opacity = '0.75';
+
+  // GASからリアルタイム取得（最新を反映）
+  if(!GAS_URL || GAS_URL.indexOf('YOUR_GAS') !== -1) return;
+
+  var oldScript = document.getElementById('boost-master-jsonp');
+  if(oldScript) oldScript.parentNode.removeChild(oldScript);
+
+  window.boostMasterCallback = function(json){
+    if(!json || json.status !== 'ok') return;
+    if(json.store !== store) return; // 店舗が変わっていたら無視
+    if(json.b1.name){ b1.value = json.b1.name; }
+    if(json.b2.name){ b2.value = json.b2.name; }
+    b1.readOnly = true; b2.readOnly = true;
+    b1.style.opacity = '0.75'; b2.style.opacity = '0.75';
+    // ローカルキャッシュも更新
+    var bm = getBoostMaster();
+    if(!bm[store]) bm[store] = [];
+    if(!bm[store][mi]) bm[store][mi] = {};
+    bm[store][mi].b1 = {name: json.b1.name, price: json.b1.price};
+    bm[store][mi].b2 = {name: json.b2.name, price: json.b2.price};
+    saveBoostMaster_db(bm);
+  };
+
+  var script = document.createElement('script');
+  script.id = 'boost-master-jsonp';
+  script.src = GAS_URL + '?action=boostMaster&store=' + encodeURIComponent(store) + '&callback=boostMasterCallback&t=' + Date.now();
+  document.body.appendChild(script);
+
+  // 商材③：スタッフ個人設定から自動表示
   if(staffName){
-    var mi2 = new Date().getMonth();
-    var b3tgt = getStaffBoostCountTarget(staffName, mi2);
+    var b3tgt = getStaffBoostCountTarget(staffName, mi);
     var b3info = b3tgt.b3 || {name:''};
-    if(b3info.name && !b3.value){
-      b3.value = b3info.name;
-    }
+    if(b3info.name && !b3.value) b3.value = b3info.name;
   }
   b3.readOnly = false;
   b3.style.opacity = '1';
