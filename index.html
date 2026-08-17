@@ -518,7 +518,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbz40bz46aw0cVV-Tg48BPzVOBEGwxzC2fKDFZp-VKApGA6Id5SX-JfqnrFZfDbcTyNuOQ/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycby2onfWxSrrm-NL-nABlQO7_wgEWgDtaQeqgSX81izno_LfJaCB77NBMXDQHisWjeO02w/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var targetMonthIdx = new Date().getMonth(); // 目標設定タブ専用（進捗ダッシュボードとは独立）
@@ -2607,7 +2607,7 @@ function renderDashboard(d){
           html += '<div style="display:flex;gap:10px;font-size:11px;flex-wrap:wrap;">';
           html += '<span>目標 <strong style="color:var(--blue);">'+(stf2.target>0?dFmtYen(stf2.target):'--')+'</strong></span>';
           html += '<span>実績 <strong style="color:var(--gold2);">'+dFmtYen(stf2.sales)+'</strong></span>';
-          html += '<span>着地 <strong>'+(stf2.landing>0?dFmtYen(stf2.landing):'--')+'</strong></span>';
+          html += '<span>着地 <strong style="color:'+(stf2.landingEntered===false?'var(--muted)':'var(--text)')+';">'+(stf2.landingEntered===false?'未入力':(stf2.landing>0?dFmtYen(stf2.landing):'--'))+'</strong></span>';
           html += '<span style="color:'+sc2+';font-weight:800;">'+(stf2.target>0?stf2.pct+'%':'--')+'</span>';
           if(stf2.diff!==null) html += '<span style="color:'+(stf2.diff>=0?'var(--green)':'var(--red)')+';font-size:10px;">'+(stf2.diff>=0?'+':'')+dFmtYen(stf2.diff)+'</span>';
           html += '</div></div>';
