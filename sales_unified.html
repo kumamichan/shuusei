@@ -1747,7 +1747,7 @@ async function saveLanding(){
   // 自分のスタッフ名を特定（日次入力タブの担当スタッフ欄から）
   var myName = document.getElementById('f-staff') ? document.getElementById('f-staff').value.trim() : '';
 
-  // staffLandingsを構築（自分のデバイスにある着地のみ送信、0の場合は除外しない）
+  // staffLandingsを構築（着地入力済みスタッフのみ送信）
   var staffLandings = [];
   for(var i=0; i<staffList.length; i++){
     var nm2 = staffList[i];
@@ -1759,13 +1759,28 @@ async function saveLanding(){
     var lNC = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newCount'))||0;
     var lRC = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_retCount'))||0;
     var tgt2 = getStaffTarget(nm2, month);
-    // 自分のスタッフ、または着地が入力されているスタッフのみ送信
-    if(nm2 === myName || lS > 0){
-      staffLandings.push({staff:nm2, lndSales:lS, lndNewTech:lNT, lndNewRetail:lNR, lndRetTech:lRT, lndRetRetail:lRR, lndNewCount:lNC, lndRetCount:lRC, tgtSales:tgt2.sales, diff:lS-tgt2.sales, pct:tgt2.sales>0?Math.round(lS/tgt2.sales*1000)/10:0});
+    // 着地が入力されているスタッフは全員送信（自分かどうかに関わらず）
+    if(lS > 0 || nm2 === myName){
+      staffLandings.push({
+        staff:nm2, lndSales:lS,
+        lndNewTech:lNT, lndNewRetail:lNR, lndRetTech:lRT, lndRetRetail:lRR,
+        lndNewCount:lNC, lndRetCount:lRC,
+        tgtSales:tgt2.sales,
+        diff:lS-tgt2.sales,
+        pct:tgt2.sales>0?Math.round(lS/tgt2.sales*1000)/10:0
+      });
     }
   }
 
-  if(!staffLandings.length) return;
+  // staffLandingsが空でも最低限自分のスタッフ名だけで送信してシートを作成
+  if(!staffLandings.length){
+    if(myName){
+      var tgtMy = getStaffTarget(myName, month);
+      staffLandings.push({staff:myName, lndSales:0, lndNewTech:0, lndNewRetail:0, lndRetTech:0, lndRetRetail:0, lndNewCount:0, lndRetCount:0, tgtSales:tgtMy.sales, diff:-tgtMy.sales, pct:0});
+    } else {
+      return; // スタッフ名も不明なら送信しない
+    }
+  }
 
   var payload={
     isLandingOnly: true,
