@@ -518,7 +518,7 @@ input[type="date"].ti{color-scheme:dark;}
 // ════════════════════════════════════════
 // SALES MANAGER — 売上管理システム JS
 // ════════════════════════════════════════
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbxB5SlNNPiw-Dz9D7QjA2FFH1OdgqW7q2mZuu5fqL7xfWDlBmDrlGxYxluK3Et135cLaA/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyAJAogUDId7h2k0XzV4xVJ0ZfXMu2FuW1wUxO1jtnuccWplm79-TX9nyAvwRplXyhpQA/exec';
 
 var MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 var targetMonthIdx = new Date().getMonth(); // 目標設定タブ専用（進捗ダッシュボードとは独立）
@@ -1743,10 +1743,13 @@ async function saveLanding(){
   var year    = new Date(dateVal).getFullYear();
   var mmStr   = month<10?'0'+month:''+month;
   var staffList = getStaffList();
-  var allTgt  = getAllTarget(month);
-  var totalLndSales=0, totalLndNC=0, totalLndRC=0;
-  var staffLandings=[];
-  for(var i=0;i<staffList.length;i++){
+
+  // 自分のスタッフ名を特定（日次入力タブの担当スタッフ欄から）
+  var myName = document.getElementById('f-staff') ? document.getElementById('f-staff').value.trim() : '';
+
+  // staffLandingsを構築（自分のデバイスにある着地のみ送信、0の場合は除外しない）
+  var staffLandings = [];
+  for(var i=0; i<staffList.length; i++){
     var nm2 = staffList[i];
     var lNT = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newTech'))||0;
     var lNR = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newRetail'))||0;
@@ -1756,35 +1759,18 @@ async function saveLanding(){
     var lNC = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_newCount'))||0;
     var lRC = parseInt(localStorage.getItem('lnd_'+nm2+'_'+mi+'_retCount'))||0;
     var tgt2 = getStaffTarget(nm2, month);
-    totalLndSales+=lS; totalLndNC+=lNC; totalLndRC+=lRC;
-    staffLandings.push({staff:nm2, lndSales:lS, tgtSales:tgt2.sales, diff:lS-tgt2.sales, pct:tgt2.sales>0?Math.round(lS/tgt2.sales*1000)/10:0});
+    // 自分のスタッフ、または着地が入力されているスタッフのみ送信
+    if(nm2 === myName || lS > 0){
+      staffLandings.push({staff:nm2, lndSales:lS, lndNewTech:lNT, lndNewRetail:lNR, lndRetTech:lRT, lndRetRetail:lRR, lndNewCount:lNC, lndRetCount:lRC, tgtSales:tgt2.sales, diff:lS-tgt2.sales, pct:tgt2.sales>0?Math.round(lS/tgt2.sales*1000)/10:0});
+    }
   }
-  var totalLndNT=0, totalLndNR=0, totalLndRT=0, totalLndRR=0;
-  for(var j=0;j<staffList.length;j++){
-    var nm3=staffList[j];
-    totalLndNT += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_newTech'))||0;
-    totalLndNR += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_newRetail'))||0;
-    totalLndRT += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_retTech'))||0;
-    totalLndRR += parseInt(localStorage.getItem('lnd_'+nm3+'_'+mi+'_retRetail'))||0;
-  }
+
+  if(!staffLandings.length) return;
+
   var payload={
     isLandingOnly: true,
     timestamp: new Date().toLocaleString('ja-JP'),
     date: year+'-'+mmStr+'-01',
-    landing_newTech:    totalLndNT,
-    landing_newRetail:  totalLndNR,
-    landing_retTech:    totalLndRT,
-    landing_retRetail:  totalLndRR,
-    landing_sales:      totalLndSales,
-    landing_newCount:   totalLndNC,
-    landing_retCount:   totalLndRC,
-    landing_totalCount: totalLndNC+totalLndRC,
-    tgt_newTech:    allTgt.newTech,  tgt_newRetail:  allTgt.newRetail,
-    tgt_retTech:    allTgt.retTech,  tgt_retRetail:  allTgt.retRetail,
-    tgt_sales:      allTgt.sales,    tgt_newCount:   allTgt.newCount,
-    tgt_retCount:   allTgt.retCount, tgt_totalCount: allTgt.totalCount,
-    landing_diff_sales: totalLndSales-allTgt.sales,
-    landing_pct_sales:  allTgt.sales>0?Math.round(totalLndSales/allTgt.sales*1000)/10:0,
     staff_landings: JSON.stringify(staffLandings)
   };
   if(!GAS_URL||GAS_URL.indexOf('YOUR_GAS')!==-1) return;
